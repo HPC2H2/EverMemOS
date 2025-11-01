@@ -12,25 +12,10 @@ import asyncio
 from pathlib import Path
 from typing import List, Tuple, Optional
 
-
-def load_prompt_template(template_name: str) -> str:
-    """
-    加载 prompt 模板
-    
-    Args:
-        template_name: 模板文件名（如 "sufficiency_check.txt"）
-    
-    Returns:
-        Prompt 模板字符串
-    """
-    prompt_dir = Path(__file__).parent.parent / "prompts"
-    template_path = prompt_dir / template_name
-    
-    if not template_path.exists():
-        raise FileNotFoundError(f"Prompt template not found: {template_path}")
-    
-    with open(template_path, "r", encoding="utf-8") as f:
-        return f.read()
+# 从 Python 文件导入 prompts（替代读取 txt 文件）
+from evaluation.locomo_evaluation.prompts.sufficiency_check_prompts import SUFFICIENCY_CHECK_PROMPT
+from evaluation.locomo_evaluation.prompts.refined_query_prompts import REFINED_QUERY_PROMPT
+from evaluation.locomo_evaluation.prompts.multi_query_prompts import MULTI_QUERY_GENERATION_PROMPT
 
 
 def format_documents_for_llm(
@@ -185,7 +170,7 @@ def parse_refined_query(response: str, original_query: str) -> str:
 async def check_sufficiency(
     query: str,
     results: List[Tuple[dict, float]],
-    llm_client,
+    llm_provider,  # 改用 LLMProvider
     llm_config: dict,
     max_docs: int = 10
 ) -> Tuple[bool, str, List[str]]:
@@ -195,7 +180,7 @@ async def check_sufficiency(
     Args:
         query: 用户查询
         results: 检索结果（Top 10）
-        llm_client: LLM 客户端（AsyncOpenAI）
+        llm_provider: LLM Provider (Memory Layer)
         llm_config: LLM 配置字典
         max_docs: 最多评估的文档数
     
@@ -210,25 +195,18 @@ async def check_sufficiency(
             use_episode=True  # 🔥 强制使用 Episode Memory
         )
         
-        # 2. 加载 prompt 模板
-        prompt_template = load_prompt_template("sufficiency_check.txt")
-        prompt = prompt_template.format(
+        # 2. 使用 prompt 模板
+        prompt = SUFFICIENCY_CHECK_PROMPT.format(
             query=query,
             retrieved_docs=retrieved_docs
         )
         
-        # 3. 调用 LLM（添加超时控制）
-        response = await asyncio.wait_for(
-            llm_client.chat.completions.create(
-                model=llm_config["model"],
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.0,  # 低温度，判断更稳定
-                max_tokens=500,
-            ),
-            timeout=30.0  # 🔥 30 秒超时
+        # 3. 调用 LLM（使用 LLMProvider）
+        result_text = await llm_provider.generate(
+            prompt=prompt,
+            temperature=0.0,  # 低温度，判断更稳定
+            max_tokens=500,
         )
-        
-        result_text = response.choices[0].message.content or ""
         
         # 4. 解析 JSON 响应
         result = parse_json_response(result_text)
@@ -282,26 +260,19 @@ async def generate_refined_query(
         )
         missing_info_str = ", ".join(missing_info) if missing_info else "N/A"
         
-        # 2. 加载 prompt 模板
-        prompt_template = load_prompt_template("refined_query.txt")
-        prompt = prompt_template.format(
+        # 2. 使用 prompt 模板
+        prompt = REFINED_QUERY_PROMPT.format(
             original_query=original_query,
             retrieved_docs=retrieved_docs,
             missing_info=missing_info_str
         )
         
-        # 3. 调用 LLM（添加超时控制）
-        response = await asyncio.wait_for(
-            llm_client.chat.completions.create(
-                model=llm_config["model"],
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.3,  # 稍高温度，增加创造性
-                max_tokens=150,
-            ),
-            timeout=30.0  # 🔥 30 秒超时
+        # 3. 调用 LLM（使用 LLMProvider）
+        result_text = await llm_provider.generate(
+            prompt=prompt,
+            temperature=0.3,  # 稍高温度，增加创造性
+            max_tokens=150,
         )
-        
-        result_text = response.choices[0].message.content or ""
         
         # 4. 解析和验证
         refined_query = parse_refined_query(result_text, original_query)
@@ -380,7 +351,7 @@ async def generate_multi_queries(
     original_query: str,
     results: List[Tuple[dict, float]],
     missing_info: List[str],
-    llm_client,
+    llm_provider,  # 改用 LLMProvider
     llm_config: dict,
     max_docs: int = 5,
     num_queries: int = 3
@@ -411,26 +382,19 @@ async def generate_multi_queries(
         )
         missing_info_str = ", ".join(missing_info) if missing_info else "N/A"
         
-        # 2. 加载 prompt 模板
-        prompt_template = load_prompt_template("multi_query_generation.txt")
-        prompt = prompt_template.format(
+        # 2. 使用 prompt 模板
+        prompt = MULTI_QUERY_GENERATION_PROMPT.format(
             original_query=original_query,
             retrieved_docs=retrieved_docs,
             missing_info=missing_info_str
         )
         
-        # 3. 调用 LLM（添加超时控制）
-        response = await asyncio.wait_for(
-            llm_client.chat.completions.create(
-                model=llm_config["model"],
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.4,  # 稍高温度，增加查询多样性
-                max_tokens=300,  # 增加 token 数以支持多个查询
-            ),
-            timeout=30.0  # 🔥 30 秒超时
+        # 3. 调用 LLM（使用 LLMProvider）
+        result_text = await llm_provider.generate(
+            prompt=prompt,
+            temperature=0.4,  # 稍高温度，增加查询多样性
+            max_tokens=300,  # 增加 token 数以支持多个查询
         )
-        
-        result_text = response.choices[0].message.content or ""
         
         # 4. 解析和验证
         queries, reasoning = parse_multi_query_response(result_text, original_query)

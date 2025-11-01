@@ -1,4 +1,6 @@
-You are an expert at query reformulation for information retrieval.
+"""Refined Query Generation Prompt for Agentic Retrieval"""
+
+REFINED_QUERY_PROMPT = """You are an expert at query reformulation for information retrieval.
 
 **Task**: Generate a refined query that targets the missing information in the retrieved results.
 
@@ -41,3 +43,5 @@ Original Query: {original_query}
 Missing Info: {missing_info}
 
 Refined Query:
+"""
+

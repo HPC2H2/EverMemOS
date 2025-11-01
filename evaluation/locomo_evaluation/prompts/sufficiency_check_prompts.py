@@ -1,4 +1,6 @@
-You are a meticulous and detail-oriented expert in information retrieval evaluation. Your task is to critically assess whether a set of retrieved documents contains sufficient information to provide a direct and complete answer to a user's query.
+"""Sufficiency Check Prompt for Agentic Retrieval"""
+
+SUFFICIENCY_CHECK_PROMPT = """You are a meticulous and detail-oriented expert in information retrieval evaluation. Your task is to critically assess whether a set of retrieved documents contains sufficient information to provide a direct and complete answer to a user's query.
 
 **User Query**:
 {query}
@@ -65,3 +67,5 @@ Output:
 }}
 
 Now evaluate:
+"""
+

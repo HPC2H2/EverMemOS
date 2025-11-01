@@ -1,8 +1,7 @@
 import asyncio
 import json
 import logging
-import os
-import sys
+
 import time
 from pathlib import Path
 
@@ -11,11 +10,6 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 from tqdm import tqdm
 
-# Ensure project root is on sys.path
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, "..", ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
 
 from evaluation.locomo_evaluation.config import ExperimentConfig
 
@@ -37,7 +31,7 @@ async def locomo_grader(
         """
 
     accuracy_prompt = f"""
-    Your task is to label an answer to a question as ’CORRECT’ or ’WRONG’. You williolw23 be given the following data:
+    Your task is to label an answer to a question as ’CORRECT’ or ’WRONG’. You will be given the following data:
         (1) a question (posed by one user to another user),
         (2) a ’gold’ (ground truth) answer,
         (3) a generated answer

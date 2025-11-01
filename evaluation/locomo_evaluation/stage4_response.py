@@ -7,48 +7,55 @@ from pathlib import Path
 from time import time
 
 import pandas as pd
-from openai import AsyncOpenAI
 from tqdm import tqdm
 
-# Ensure project root is on sys.path so `evaluation` can be imported when running directly
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, "..", ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+
 
 from evaluation.locomo_evaluation.config import ExperimentConfig
 from evaluation.locomo_evaluation.prompts.answer_prompts import ANSWER_PROMPT
 
+# 使用 Memory Layer 的 LLMProvider
+from memory_layer.llm.llm_provider import LLMProvider
+
 
 async def locomo_response(
-    llm_client,
-    llm_config,
+    llm_provider: LLMProvider,  # 改用 LLMProvider
     context: str,
     question: str,
     experiment_config: ExperimentConfig,
 ) -> str:
+    """生成回答（使用 LLMProvider）
+    
+    Args:
+        llm_provider: LLM Provider
+        context: 检索到的上下文
+        question: 用户问题
+        experiment_config: 实验配置
+    
+    Returns:
+        生成的答案
+    """
     prompt = ANSWER_PROMPT.format(context=context, question=question)
+    
     for i in range(experiment_config.max_retries):
         try:
-            response = await llm_client.chat.completions.create(
-                model=llm_config["model"],
-                messages=[{"role": "system", "content": prompt}],
+            result = await llm_provider.generate(
+                prompt=prompt,
                 temperature=0,
                 max_tokens=32768,
             )
-            result = response.choices[0].message.content or ""
-            if experiment_config.mode == "cot":
-                # 🔥 安全解析 FINAL ANSWER（避免 index out of range）
-                if "FINAL ANSWER:" in result:
-                    parts = result.split("FINAL ANSWER:")
-                    if len(parts) > 1:
-                        result = parts[1].strip()
-                    else:
-                        # 分割失败，使用原始结果
-                        result = result.strip()
+            
+            # 🔥 安全解析 FINAL ANSWER（避免 index out of range）
+            if "FINAL ANSWER:" in result:
+                parts = result.split("FINAL ANSWER:")
+                if len(parts) > 1:
+                    result = parts[1].strip()
                 else:
-                    # 没有 FINAL ANSWER 标记，使用原始结果
+                    # 分割失败，使用原始结果
                     result = result.strip()
+            else:
+                # 没有 FINAL ANSWER 标记，使用原始结果
+                result = result.strip()
             
             if result == "":
                 continue
@@ -60,15 +67,14 @@ async def locomo_response(
     return result
 
 
-async def process_qa(qa, search_result, oai_client, llm_config, experiment_config):
+async def process_qa(qa, search_result, llm_provider, experiment_config):
     """
     处理单个 QA 对
     
     Args:
         qa: 问题和答案对
         search_result: 检索结果（包含 context）
-        oai_client: OpenAI 客户端
-        llm_config: LLM 配置
+        llm_provider: LLM Provider
         experiment_config: 实验配置
     
     Returns:
@@ -80,7 +86,7 @@ async def process_qa(qa, search_result, oai_client, llm_config, experiment_confi
     qa_category = qa.get("category")
 
     answer = await locomo_response(
-        oai_client, llm_config, search_result.get("context"), query, experiment_config
+        llm_provider, search_result.get("context"), query, experiment_config
     )
 
     response_duration_ms = (time() - start) * 1000
@@ -117,9 +123,17 @@ async def main(search_path, save_path):
     """
     llm_config = ExperimentConfig.llm_config["openai"]
     experiment_config = ExperimentConfig()
-    oai_client = AsyncOpenAI(
-        api_key=llm_config["api_key"], base_url=llm_config["base_url"]
+    
+    # 创建 LLM Provider（替代 AsyncOpenAI）
+    llm_provider = LLMProvider(
+        provider_type="openai",
+        model=llm_config["model"],
+        api_key=llm_config["api_key"],
+        base_url=llm_config["base_url"],
+        temperature=llm_config.get("temperature", 0.0),
+        max_tokens=llm_config.get("max_tokens", 32768),
     )
+    
     locomo_df = pd.read_json(experiment_config.datase_path)
     with open(search_path) as file:
         locomo_search_results = json.load(file)
@@ -144,7 +158,7 @@ async def main(search_path, save_path):
     async def process_qa_with_semaphore(qa, search_result, group_id):
         """带并发控制的 QA 处理"""
         async with semaphore:
-            result = await process_qa(qa, search_result, oai_client, llm_config, experiment_config)
+            result = await process_qa(qa, search_result, llm_provider, experiment_config)
             return (group_id, result)
     
     total_qa_count = 0

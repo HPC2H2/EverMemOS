@@ -132,7 +132,7 @@ def raw_data_load(locomo_data_path: str) -> Dict[str, List[RawData]]:
                         if optional_field in msg:
                             message[optional_field] = msg[optional_field]
                     messages.append(message)
-            # messages = messages[:100]
+            # messages = messages[:30]
         raw_data_dict[str(con_id)] = messages
 
         print(
@@ -160,7 +160,7 @@ async def memcell_extraction_from_conversation(
     use_semantic_extraction: bool = False,  # 新增：是否启用语义记忆提取
 ) -> list:
 
-    episode_extractor = EpisodeMemoryExtractor(llm_provider=llm_provider)
+    episode_extractor = EpisodeMemoryExtractor(llm_provider=llm_provider, use_eval_prompts=True)
     memcell_list = []
     speakers = {
         raw_data.content["speaker_id"]
@@ -300,7 +300,7 @@ async def process_single_conversation(
         
         # 创建 MemCellExtractor
         raw_data_list = convert_conversation_to_raw_data_list(conversation)
-        memcell_extractor = ConvMemCellExtractor(llm_provider=llm_provider)
+        memcell_extractor = ConvMemCellExtractor(llm_provider=llm_provider, use_eval_prompts=True)
         
         # 条件创建：聚类管理器（每个对话独立）
         if config and config.enable_clustering:

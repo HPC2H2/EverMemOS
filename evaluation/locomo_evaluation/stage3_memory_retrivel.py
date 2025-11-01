@@ -25,6 +25,9 @@ from agentic_layer import rerank_service
 
 from evaluation.locomo_evaluation.tools import agentic_utils
 
+# 新增：使用 Memory Layer 的 LLMProvider
+from memory_layer.llm.llm_provider import LLMProvider
+
 
 # This file depends on the rank_bm25 library.
 # If you haven't installed it yet, run: pip install rank_bm25
@@ -581,7 +584,7 @@ async def hybrid_search_with_rrf(
 async def agentic_retrieval(
     query: str,
     config: ExperimentConfig,
-    llm_client,
+    llm_provider: LLMProvider,  # 改用 LLMProvider
     llm_config: dict,
     emb_index,
     bm25,
@@ -601,7 +604,7 @@ async def agentic_retrieval(
     Args:
         query: 用户查询
         config: 实验配置
-        llm_client: LLM 客户端（AsyncOpenAI）
+        llm_provider: LLM Provider (Memory Layer)
         llm_config: LLM 配置字典
         emb_index: Embedding 索引
         bm25: BM25 索引
@@ -687,7 +690,7 @@ async def agentic_retrieval(
     is_sufficient, reasoning, missing_info = await agentic_utils.check_sufficiency(
         query=query,
         results=reranked_top5,  # 🔥 使用 reranked Top 5
-        llm_client=llm_client,
+        llm_provider=llm_provider,  # 使用 LLMProvider
         llm_config=llm_config,
         max_docs=5  # 🔥 明确只检查 5 个文档
     )
@@ -726,7 +729,7 @@ async def agentic_retrieval(
             original_query=query,
             results=reranked_top5,  # 🔥 基于 Top 5 生成改进查询
             missing_info=missing_info,
-            llm_client=llm_client,
+            llm_provider=llm_provider,  # 使用 LLMProvider
             llm_config=llm_config,
             max_docs=5,
             num_queries=3  # 期望生成 3 个查询
@@ -786,7 +789,7 @@ async def agentic_retrieval(
             original_query=query,
             results=reranked_top5,
             missing_info=missing_info,
-            llm_client=llm_client,
+            llm_provider=llm_provider,  # 使用 LLMProvider
             llm_config=llm_config,
             max_docs=5
         )
@@ -1100,8 +1103,8 @@ async def main():
     # Ensure NLTK data is ready
     ensure_nltk_data()
     
-    # 🔥 初始化 LLM 客户端（用于 Agentic 检索）
-    oai_client = None
+    # 🔥 初始化 LLM Provider（用于 Agentic 检索）
+    llm_provider = None
     llm_config = None
     if config.use_agentic_retrieval:
         if agentic_utils is None:
@@ -1109,13 +1112,18 @@ async def main():
             print("Please check that tools/agentic_utils.py exists")
             return
         
-        from openai import AsyncOpenAI
         llm_config = config.llm_config.get(config.llm_service, config.llm_config["openai"])
-        oai_client = AsyncOpenAI(
+        
+        # 使用 Memory Layer 的 LLMProvider 替代 AsyncOpenAI
+        llm_provider = LLMProvider(
+            provider_type="openai",
+            model=llm_config["model"],
             api_key=llm_config["api_key"],
-            base_url=llm_config["base_url"]
+            base_url=llm_config["base_url"],
+            temperature=llm_config.get("temperature", 0.3),
+            max_tokens=llm_config.get("max_tokens", 32768),
         )
-        print(f"✅ LLM client initialized for agentic retrieval")
+        print(f"✅ LLM Provider initialized for agentic retrieval")
         print(f"   Model: {llm_config['model']}")
 
     # Load the dataset
@@ -1241,7 +1249,7 @@ async def main():
                         top_results, retrieval_metadata = await agentic_retrieval(
                             query=question,
                             config=config,
-                            llm_client=oai_client,
+                            llm_provider=llm_provider,  # 使用 LLMProvider
                             llm_config=llm_config,
                             emb_index=emb_index,
                             bm25=bm25,

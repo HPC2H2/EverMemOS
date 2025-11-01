@@ -1,4 +1,6 @@
-You are an expert at query reformulation for information retrieval.
+"""Multi-Query Generation Prompt for Agentic Retrieval"""
+
+MULTI_QUERY_GENERATION_PROMPT = """You are an expert at query reformulation for information retrieval.
 
 **Task**: Generate multiple complementary search queries to maximize retrieval accuracy (precision and recall).
 
@@ -114,4 +116,6 @@ Output:
 }}
 
 Now generate the queries:
+
+"""
 
