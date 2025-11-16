@@ -5,6 +5,12 @@
   EverMemOS
 </h1>
 
+<p>
+  <a href="https://evermind-ai.com/" target="_blank">
+    <img alt="Website" src="https://img.shields.io/badge/Website-evermind--ai.com-4A90E2?style=flat-square&logo=link&logoColor=white" />
+  </a>
+</p>
+
 <p><strong>Let every interaction be driven by understanding.</strong> · Enterprise-Grade Intelligent Memory System</p>
 
 <p>
