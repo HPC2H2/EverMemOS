@@ -7,8 +7,8 @@ from typing import Dict, Any, List
 from pathlib import Path
 
 from agentic_layer.memory_manager import MemoryManager
-from memory_layer.memory_manager import MemorizeRequest
-from api_specs.types import RawDataType
+from api_specs.dtos.memory_command import MemorizeRequest
+from api_specs.memory_types import RawDataType
 from memory_layer.memcell_extractor.base_memcell_extractor import RawData
 from common_utils.datetime_utils import from_iso_format
 
