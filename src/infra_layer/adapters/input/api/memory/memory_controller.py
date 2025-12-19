@@ -20,14 +20,11 @@ from core.interface.controller.base_controller import BaseController, get, post,
 from core.constants.errors import ErrorCode, ErrorStatus
 from agentic_layer.memory_manager import MemoryManager
 from api_specs.request_converter import (
-    handle_conversation_format,
+    convert_simple_message_to_memorize_request,
     convert_dict_to_fetch_mem_request,
     convert_dict_to_retrieve_mem_request,
 )
 from api_specs.dtos.memory_query import ConversationMetaRequest, UserDetail
-from infra_layer.adapters.input.api.mapper.group_chat_converter import (
-    convert_simple_message_to_memorize_input,
-)
 from infra_layer.adapters.out.persistence.document.memory.conversation_meta import (
     ConversationMeta,
     UserDetailModel,
@@ -205,23 +202,24 @@ class MemoryController(BaseController):
             message_data = await fastapi_request.json()
             logger.info("Received memorize request (single message)")
 
-            # 3. Use group_chat_converter to convert to internal format
+            # 2. Convert directly to MemorizeRequest (unified single-step conversion)
             logger.info(
-                "Starting conversion from simple message format to internal format"
+                "Starting conversion from simple message format to MemorizeRequest"
             )
-            memorize_input = convert_simple_message_to_memorize_input(message_data)
+            memorize_request = await convert_simple_message_to_memorize_request(
+                message_data
+            )
 
             # Extract metadata for logging
-            group_name = memorize_input.get("group_name")
-            group_id = memorize_input.get("group_id")
+            group_name = memorize_request.group_name
+            group_id = memorize_request.group_id
 
             logger.info(
                 "Conversion completed: group_id=%s, group_name=%s", group_id, group_name
             )
 
-            # 4. Convert to MemorizeRequest object and call memory_manager
+            # 3. Call memory_manager to process the request
             logger.info("Starting to process memory request")
-            memorize_request = await handle_conversation_format(memorize_input)
             # memorize returns count of extracted memories (int)
             memory_count = await self.memory_manager.memorize(memorize_request)
 

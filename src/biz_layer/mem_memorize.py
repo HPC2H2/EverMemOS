@@ -1219,7 +1219,7 @@ async def memorize(request: MemorizeRequest) -> int:
     if memcell == None:
         # Save new messages to conversation_data_repo
         await conversation_data_repo.save_conversation_data(
-            request.new_raw_data_list, request.group_id
+           request.new_raw_data_list, request.group_id
         )
         await update_status_when_no_memcell(
             request, status_result, current_time, request.raw_data_type

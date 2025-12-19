@@ -167,207 +167,183 @@ def convert_dict_to_retrieve_mem_request(
 # =========================================
 
 
-def _extract_current_time(data: Dict[str, Any]) -> Optional[datetime]:
+def normalize_refer_list(refer_list: List[Any]) -> List[str]:
     """
-    Extract current_time field from data
+    Normalize refer_list format to a list of message IDs
+
+    Supports two formats:
+    1. String list: ["msg_id_1", "msg_id_2"]
+    2. MessageReference object list: [{"message_id": "msg_id_1", ...}, ...]
 
     Args:
-        data: Data dictionary
+        refer_list: Original reference list
 
     Returns:
-        current_time or None
+        List[str]: Normalized list of message IDs
     """
-    if "current_time" not in data:
-        return None
+    if not refer_list:
+        return []
 
-    current_time_str = data["current_time"]
-    if isinstance(current_time_str, str):
-        try:
-            return datetime.fromisoformat(current_time_str.replace('Z', '+00:00'))
-        except ValueError:
-            logger.warning(f"Unable to parse current_time: {current_time_str}")
-            return None
-    elif isinstance(current_time_str, datetime):
-        # from anhua
-        if current_time_str.tzinfo is None:
-            return current_time_str.replace(tzinfo=ZoneInfo("UTC"))
-        return current_time_str
-
-    return None
+    normalized: List[str] = []
+    for refer in refer_list:
+        if isinstance(refer, str):
+            normalized.append(refer)
+        elif isinstance(refer, dict):
+            ref_msg_id = refer.get("message_id")
+            if ref_msg_id:
+                normalized.append(str(ref_msg_id))
+    return normalized
 
 
-def _create_memorize_request(
-    history_data: List[RawData],
-    new_data: List[RawData],
-    data_type: RawDataType,
-    participants: List[str],
-    group_id: str = None,
-    group_name: str = None,
-    current_time: datetime = None,
-) -> MemorizeRequest:
-    """
-    Common function to create MemorizeRequest object
-
-    Args:
-        history_data: List of historical data
-        new_data: List of new data
-        data_type: Data type
-        participants: List of participants
-        group_id: Group ID
-        group_name: Group name
-        current_time: Current time
-
-    Returns:
-        MemorizeRequest object
-    """
-    # Ensure participants is not None
-    if participants is None:
-        participants = []
-
-    # If current_time is None, try to get it from timestamp or updateTime of new_data[0]
-    if current_time is None and new_data and new_data[0] is not None:
-        first_data = new_data[0]
-        if hasattr(first_data, 'content') and first_data.content:
-            # Prefer updateTime
-            if 'updateTime' in first_data.content and first_data.content['updateTime']:
-                current_time = first_data.content['updateTime']
-            elif 'timestamp' in first_data.content and first_data.content['timestamp']:
-                current_time = first_data.content['timestamp']
-
-    return MemorizeRequest(
-        history_raw_data_list=history_data,
-        new_raw_data_list=new_data,
-        raw_data_type=data_type,
-        user_id_list=participants,
-        group_id=group_id,
-        group_name=group_name,
-        current_time=current_time,
-    )
-
-
-async def convert_single_message_to_raw_data(
-    input_data: Dict[str, Any],
-    data_id_field: str = "_id",
+def build_raw_data_from_simple_message(
+    message_id: str,
+    sender: str,
+    content: str,
+    timestamp: datetime,
+    sender_name: Optional[str] = None,
+    group_id: Optional[str] = None,
     group_name: Optional[str] = None,
+    refer_list: Optional[List[str]] = None,
+    extra_metadata: Optional[Dict[str, Any]] = None,
 ) -> RawData:
     """
-    Convert input data to RawData format
+    Build RawData object from simple message fields.
+
+    This is the canonical function for creating RawData from simple message format.
+    All code that needs to create RawData from simple messages should use this function
+    to ensure consistency.
 
     Args:
-        input_data: Dictionary containing _id, fullName, receiverId, roomId, userIdList,
-                   referList, content, createTime, createBy, updateTime, orgId
-        data_id_field: Field name used as data_id, default is "_id"
-        group_name: Group name (passed from outside, will be added to message content)
+        message_id: Message ID (required)
+        sender: Sender user ID (required)
+        content: Message content (required)
+        timestamp: Message timestamp as datetime object (required)
+        sender_name: Sender display name (defaults to sender if not provided)
+        group_id: Group ID (optional)
+        group_name: Group name (optional)
+        refer_list: Normalized list of referenced message IDs (optional)
+        extra_metadata: Additional metadata to merge (optional)
 
     Returns:
-        RawData object
+        RawData: Fully constructed RawData object
     """
-    # Extract data_id
-    data_id = str(input_data.get(data_id_field, ""))
+    # Use sender as sender_name if not provided
+    if sender_name is None:
+        sender_name = sender
 
-    room_id = input_data.get("roomId")
+    # Ensure refer_list is a list
+    if refer_list is None:
+        refer_list = []
 
-    # group_name fully depends on external input
-    # If not passed externally, it will be None (no longer query database)
-    if group_name:
-        logger.debug("Using externally provided group_name: %s", group_name)
-    else:
-        logger.debug("No external group_name provided, will use None")
-
-    # Build content dictionary, including all business-related fields
-    content = {
-        "speaker_name": input_data.get("fullName"),
-        "receiverId": input_data.get("receiverId"),
-        "roomId": room_id,
-        "groupName": group_name,  # Add group name
-        "userIdList": input_data.get("userIdList", []),
-        "referList": input_data.get("referList", []),
-        "content": input_data.get("content"),
-        "timestamp": from_iso_format(
-            input_data.get("createTime"), ZoneInfo("UTC")
-        ),  # Use converted UTC time
-        "createBy": input_data.get("createBy"),
-        "updateTime": from_iso_format(
-            input_data.get("updateTime"), ZoneInfo("UTC")
-        ),  # Use converted UTC time
-        "orgId": input_data.get("orgId"),
-        "speaker_id": input_data.get("createBy"),
-        "msgType": input_data.get("msgType"),
-        "data_id": data_id,
+    # Build content dictionary with all required fields
+    raw_content = {
+        "speaker_name": sender_name,
+        "receiverId": None,
+        "roomId": group_id,
+        "groupName": group_name,
+        "userIdList": [],
+        "referList": refer_list,
+        "content": content,
+        "timestamp": timestamp,
+        "createBy": sender,
+        "updateTime": timestamp,
+        "orgId": None,
+        "speaker_id": sender,
+        "msgType": 1,  # TEXT
+        "data_id": message_id,
     }
 
-    # Build metadata, including system fields
+    # Build metadata
     metadata = {
-        "original_id": data_id,
-        "createTime": from_iso_format(
-            input_data.get("createTime"), ZoneInfo("UTC")
-        ),  # Use converted UTC time
-        "updateTime": from_iso_format(
-            input_data.get("updateTime"), ZoneInfo("UTC")
-        ),  # Use converted UTC time
-        "createBy": input_data.get("createBy"),
-        "orgId": input_data.get("orgId"),
+        "original_id": message_id,
+        "createTime": timestamp,
+        "updateTime": timestamp,
+        "createBy": sender,
+        "orgId": None,
     }
 
-    return RawData(content=content, data_id=data_id, metadata=metadata)
+    # Merge extra metadata if provided
+    if extra_metadata:
+        metadata.update(extra_metadata)
 
-
-async def convert_conversation_to_raw_data_list(
-    input_data_list: list[Dict[str, Any]],
-    data_id_field: str = "_id",
-    group_name: Optional[str] = None,
-) -> list[RawData]:
-    """
-    Batch convert data to RawData format
-
-    Args:
-        input_data_list: List of input data
-        data_id_field: Field name used as data_id, default is "_id"
-        group_name: Group name (passed from outside, will be passed to each message conversion)
-
-    Returns:
-        List of RawData objects
-    """
-    return [
-        await convert_single_message_to_raw_data(
-            data, data_id_field=data_id_field, group_name=group_name
-        )
-        for data in input_data_list
-    ]
-
-
-async def handle_conversation_format(data: Dict[str, Any]) -> MemorizeRequest:
-    """
-    Handle chat message format data
-
-    Args:
-        data: Data containing messages field
-
-    Returns:
-        MemorizeRequest object
-    """
-    logger.debug("Handling chat message format data")
-    messages = data.get(DataFields.MESSAGES, [])
-    if not messages:
-        raise ValueError("messages field cannot be empty")
-
-    # Extract group-level information
-    group_name = data.get("group_name")
-
-    # Convert to RawData format, passing group name
-    raw_data_list = await convert_conversation_to_raw_data_list(
-        messages, group_name=group_name
+    return RawData(
+        content=raw_content,
+        data_id=message_id,
+        metadata=metadata,
     )
 
-    # Extract current_time
-    current_time = _extract_current_time(data)
 
-    return _create_memorize_request(
-        history_data=[],
-        new_data=raw_data_list,
-        data_type=RawDataType(data.get(DataFields.RAW_DATA_TYPE, "Conversation")),
-        participants=[],
-        group_id=data.get(DataFields.GROUP_ID),
-        group_name=data.get("group_name"),
-        current_time=current_time,
+async def convert_simple_message_to_memorize_request(
+    message_data: Dict[str, Any]
+) -> MemorizeRequest:
+    """
+    Convert simple direct single message format directly to MemorizeRequest
+
+    This is a unified conversion function that combines the previous two-step conversion
+    (convert_simple_message_to_memorize_input + handle_conversation_format) into one.
+
+    Args:
+        message_data: Simple single message data, containing:
+            - group_id (optional): Group ID
+            - group_name (optional): Group name
+            - message_id (required): Message ID
+            - create_time (required): Creation time (ISO 8601 format)
+            - sender (required): Sender user ID
+            - sender_name (optional): Sender name
+            - content (required): Message content
+            - refer_list (optional): List of referenced message IDs
+
+    Returns:
+        MemorizeRequest: Ready-to-use memorize request object
+
+    Raises:
+        ValueError: When required fields are missing
+    """
+    # Extract fields
+    group_id = message_data.get("group_id")
+    group_name = message_data.get("group_name")
+    message_id = message_data.get("message_id")
+    create_time_str = message_data.get("create_time")
+    sender = message_data.get("sender")
+    sender_name = message_data.get("sender_name", sender)
+    content = message_data.get("content", "")
+    refer_list = message_data.get("refer_list", [])
+
+    # Validate required fields
+    if not message_id:
+        raise ValueError("Missing required field: message_id")
+    if not create_time_str:
+        raise ValueError("Missing required field: create_time")
+    if not sender:
+        raise ValueError("Missing required field: sender")
+    if not content:
+        raise ValueError("Missing required field: content")
+
+    # Normalize refer_list
+    normalized_refer_list = normalize_refer_list(refer_list)
+
+    # Parse timestamp
+    timestamp = from_iso_format(create_time_str, ZoneInfo("UTC"))
+
+    # Build RawData using the canonical function
+    raw_data = build_raw_data_from_simple_message(
+        message_id=message_id,
+        sender=sender,
+        content=content,
+        timestamp=timestamp,
+        sender_name=sender_name,
+        group_id=group_id,
+        group_name=group_name,
+        refer_list=normalized_refer_list,
+    )
+
+    # Create and return MemorizeRequest
+    return MemorizeRequest(
+        history_raw_data_list=[],
+        new_raw_data_list=[raw_data],
+        raw_data_type=RawDataType.CONVERSATION,
+        user_id_list=[],
+        group_id=group_id,
+        group_name=group_name,
+        current_time=timestamp,
     )
