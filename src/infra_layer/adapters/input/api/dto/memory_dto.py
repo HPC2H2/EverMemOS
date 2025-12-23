@@ -2,8 +2,8 @@
 """
 Memory API DTO
 
-用于 Memory API 的请求和响应数据传输对象。
-这些模型用于定义 OpenAPI 参数文档。
+Request and response data transfer objects for Memory API.
+These models are used to define OpenAPI parameter documentation.
 """
 
 from typing import Any, Dict, List, Optional, Tuple
@@ -13,63 +13,53 @@ from pydantic import BaseModel, Field
 
 class MemorizeMessageRequest(BaseModel):
     """
-    存储单条消息请求体
-    
-    用于 POST /api/v1/memories 接口
+    Store single message request body
+
+    Used for POST /api/v1/memories endpoint
     """
-    
+
     group_id: Optional[str] = Field(
-        default=None,
-        description="群组 ID",
-        examples=["group_123"]
+        default=None, description="Group ID", examples=["group_123"]
     )
     group_name: Optional[str] = Field(
-        default=None,
-        description="群组名称",
-        examples=["项目讨论群"]
+        default=None, description="Group name", examples=["Project Discussion Group"]
     )
     message_id: str = Field(
-        ...,
-        description="消息唯一标识符",
-        examples=["msg_001"]
+        ..., description="Message unique identifier", examples=["msg_001"]
     )
     create_time: str = Field(
         ...,
-        description="消息创建时间（ISO 8601 格式）",
-        examples=["2025-01-15T10:00:00+00:00"]
+        description="Message creation time (ISO 8601 format)",
+        examples=["2025-01-15T10:00:00+00:00"],
     )
-    sender: str = Field(
-        ...,
-        description="发送者用户 ID",
-        examples=["user_001"]
-    )
+    sender: str = Field(..., description="Sender user ID", examples=["user_001"])
     sender_name: Optional[str] = Field(
         default=None,
-        description="发送者名称（若不提供则使用 sender）",
-        examples=["张三"]
+        description="Sender name (uses sender if not provided)",
+        examples=["John"],
     )
     content: str = Field(
         ...,
-        description="消息内容",
-        examples=["今天我们来讨论一下新功能的技术方案"]
+        description="Message content",
+        examples=["Let's discuss the technical solution for the new feature today"],
     )
     refer_list: Optional[List[str]] = Field(
         default=None,
-        description="引用的消息 ID 列表",
-        examples=[["msg_000"]]
+        description="List of referenced message IDs",
+        examples=[["msg_000"]],
     )
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "group_id": "group_123",
-                "group_name": "项目讨论群",
+                "group_name": "Project Discussion Group",
                 "message_id": "msg_001",
                 "create_time": "2025-01-15T10:00:00+00:00",
                 "sender": "user_001",
-                "sender_name": "张三",
-                "content": "今天我们来讨论一下新功能的技术方案",
-                "refer_list": ["msg_000"]
+                "sender_name": "John",
+                "content": "Let's discuss the technical solution for the new feature today",
+                "refer_list": ["msg_000"],
             }
         }
     }
@@ -77,48 +67,39 @@ class MemorizeMessageRequest(BaseModel):
 
 class FetchMemoriesParams(BaseModel):
     """
-    获取用户记忆的查询参数
-    
-    用于 GET /api/v1/memories 接口
+    Query parameters for fetching user memories
+
+    Used for GET /api/v1/memories endpoint
     """
-    
-    user_id: str = Field(
-        ...,
-        description="用户 ID",
-        examples=["user_123"]
-    )
+
+    user_id: str = Field(..., description="User ID", examples=["user_123"])
     memory_type: Optional[str] = Field(
         default="multiple",
-        description="记忆类型：profile（用户画像）、episode_memory（情节记忆）、foresight（前瞻记忆）、event_log（事件日志）、multiple（多种类型，默认）",
-        examples=["profile"]
+        description="Memory type: profile (user profile), episode_memory (episodic memory), foresight (prospective memory), event_log (event log), multiple (multiple types, default)",
+        examples=["profile"],
     )
     limit: Optional[int] = Field(
         default=10,
-        description="返回记忆的最大数量",
+        description="Maximum number of memories to return",
         ge=1,
         le=100,
-        examples=[20]
+        examples=[20],
     )
     offset: Optional[int] = Field(
-        default=0,
-        description="分页偏移量",
-        ge=0,
-        examples=[0]
+        default=0, description="Pagination offset", ge=0, examples=[0]
     )
     sort_by: Optional[str] = Field(
-        default=None,
-        description="排序字段",
-        examples=["created_at"]
+        default=None, description="Sort field", examples=["created_at"]
     )
     sort_order: Optional[str] = Field(
         default="desc",
-        description="排序方向：asc（升序）或 desc（降序）",
-        examples=["desc"]
+        description="Sort direction: asc (ascending) or desc (descending)",
+        examples=["desc"],
     )
     version_range: Optional[List[Optional[str]]] = Field(
         default=None,
-        description="版本范围过滤，格式为 [start, end]，闭区间",
-        examples=[["v1.0", "v2.0"]]
+        description="Version range filter, format [start, end], closed interval",
+        examples=[["v1.0", "v2.0"]],
     )
 
     model_config = {
@@ -128,7 +109,7 @@ class FetchMemoriesParams(BaseModel):
                 "memory_type": "profile",
                 "limit": 20,
                 "offset": 0,
-                "sort_order": "desc"
+                "sort_order": "desc",
             }
         }
     }
@@ -136,164 +117,146 @@ class FetchMemoriesParams(BaseModel):
 
 class SearchMemoriesRequest(BaseModel):
     """
-    搜索记忆的请求参数
-    
-    用于 GET /api/v1/memories/search 接口
-    支持通过 query params 或 body 传递参数
+    Search memories request parameters
+
+    Used for GET /api/v1/memories/search endpoint
+    Supports passing parameters via query params or body
     """
-    
+
     user_id: Optional[str] = Field(
         default=None,
-        description="用户 ID（user_id 和 group_id 至少提供一个）",
-        examples=["user_123"]
+        description="User ID (at least one of user_id or group_id must be provided)",
+        examples=["user_123"],
     )
     group_id: Optional[str] = Field(
         default=None,
-        description="群组 ID（user_id 和 group_id 至少提供一个）",
-        examples=["group_456"]
+        description="Group ID (at least one of user_id or group_id must be provided)",
+        examples=["group_456"],
     )
     query: Optional[str] = Field(
-        default=None,
-        description="搜索查询文本",
-        examples=["咖啡偏好"]
+        default=None, description="Search query text", examples=["coffee preference"]
     )
     retrieve_method: Optional[str] = Field(
         default="keyword",
-        description="检索方法：keyword（关键词，默认）、vector（向量）、hybrid（混合）、rrf（RRF融合）、agentic（智能检索）",
-        examples=["keyword"]
+        description="Retrieval method: keyword (keyword, default), vector (vector), hybrid (hybrid), rrf (RRF fusion), agentic (intelligent retrieval)",
+        examples=["keyword"],
     )
     top_k: Optional[int] = Field(
         default=10,
-        description="返回结果的最大数量",
+        description="Maximum number of results to return",
         ge=1,
         le=100,
-        examples=[10]
+        examples=[10],
     )
     memory_types: Optional[List[str]] = Field(
         default=None,
-        description="要检索的记忆类型列表：episode_memory、foresight、event_log（不支持 profile）",
-        examples=[["episode_memory"]]
+        description="List of memory types to retrieve: episode_memory, foresight, event_log (profile not supported)",
+        examples=[["episode_memory"]],
     )
     start_time: Optional[str] = Field(
         default=None,
-        description="时间范围起始（ISO 8601 格式）",
-        examples=["2024-01-01T00:00:00"]
+        description="Time range start (ISO 8601 format)",
+        examples=["2024-01-01T00:00:00"],
     )
     end_time: Optional[str] = Field(
         default=None,
-        description="时间范围结束（ISO 8601 格式）",
-        examples=["2024-12-31T23:59:59"]
+        description="Time range end (ISO 8601 format)",
+        examples=["2024-12-31T23:59:59"],
     )
     radius: Optional[float] = Field(
         default=None,
-        description="向量检索的 COSINE 相似度阈值（仅用于 vector 和 hybrid 方法，默认 0.6）",
+        description="COSINE similarity threshold for vector retrieval (only for vector and hybrid methods, default 0.6)",
         ge=0.0,
         le=1.0,
-        examples=[0.6]
+        examples=[0.6],
     )
     include_metadata: Optional[bool] = Field(
-        default=True,
-        description="是否包含元数据",
-        examples=[True]
+        default=True, description="Whether to include metadata", examples=[True]
     )
     filters: Optional[Dict[str, Any]] = Field(
-        default=None,
-        description="额外的过滤条件",
-        examples=[{}]
+        default=None, description="Additional filter conditions", examples=[{}]
     )
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "user_id": "user_123",
-                "query": "咖啡偏好",
+                "query": "coffee preference",
                 "retrieve_method": "keyword",
                 "top_k": 10,
-                "memory_types": ["episode_memory"]
+                "memory_types": ["episode_memory"],
             }
         }
     }
 
 
 class UserDetailRequest(BaseModel):
-    """用户详情请求模型"""
-    
-    full_name: str = Field(
-        ...,
-        description="用户全名",
-        examples=["张三"]
-    )
+    """User detail request model"""
+
+    full_name: str = Field(..., description="User full name", examples=["John Smith"])
     role: Optional[str] = Field(
-        default=None,
-        description="用户角色",
-        examples=["developer"]
+        default=None, description="User role", examples=["developer"]
     )
     extra: Optional[Dict[str, Any]] = Field(
         default=None,
-        description="额外信息",
-        examples=[{"department": "Engineering"}]
+        description="Additional information",
+        examples=[{"department": "Engineering"}],
     )
 
 
 class ConversationMetaCreateRequest(BaseModel):
     """
-    保存会话元数据请求体
-    
-    用于 POST /api/v1/memories/conversation-meta 接口
+    Save conversation metadata request body
+
+    Used for POST /api/v1/memories/conversation-meta endpoint
     """
-    
-    version: str = Field(
-        ...,
-        description="元数据版本号",
-        examples=["1.0"]
-    )
-    scene: str = Field(
-        ...,
-        description="场景标识符",
-        examples=["group_chat"]
-    )
+
+    version: str = Field(..., description="Metadata version number", examples=["1.0"])
+    scene: str = Field(..., description="Scene identifier", examples=["group_chat"])
     scene_desc: Dict[str, Any] = Field(
         ...,
-        description="场景描述对象，可包含 bot_ids 等字段",
-        examples=[{"bot_ids": ["bot_001"], "type": "project_discussion"}]
+        description="Scene description object, can include fields like bot_ids",
+        examples=[{"bot_ids": ["bot_001"], "type": "project_discussion"}],
     )
     name: str = Field(
-        ...,
-        description="会话名称",
-        examples=["项目讨论群"]
+        ..., description="Conversation name", examples=["Project Discussion Group"]
     )
     description: Optional[str] = Field(
         default=None,
-        description="会话描述",
-        examples=["新功能开发技术讨论"]
+        description="Conversation description",
+        examples=["Technical discussion for new feature development"],
     )
     group_id: str = Field(
-        ...,
-        description="群组唯一标识符",
-        examples=["group_123"]
+        ..., description="Group unique identifier", examples=["group_123"]
     )
     created_at: str = Field(
         ...,
-        description="会话创建时间（ISO 8601 格式）",
-        examples=["2025-01-15T10:00:00+00:00"]
+        description="Conversation creation time (ISO 8601 format)",
+        examples=["2025-01-15T10:00:00+00:00"],
     )
     default_timezone: Optional[str] = Field(
-        default=None,
-        description="默认时区",
-        examples=["UTC"]
+        default=None, description="Default timezone", examples=["UTC"]
     )
     user_details: Optional[Dict[str, UserDetailRequest]] = Field(
         default=None,
-        description="参与者详情，key 为用户 ID，value 为用户详情对象",
-        examples=[{
-            "user_001": {"full_name": "张三", "role": "developer", "extra": {"department": "Engineering"}},
-            "user_002": {"full_name": "李四", "role": "designer", "extra": {"department": "Design"}}
-        }]
+        description="Participant details, key is user ID, value is user detail object",
+        examples=[
+            {
+                "user_001": {
+                    "full_name": "John Smith",
+                    "role": "developer",
+                    "extra": {"department": "Engineering"},
+                },
+                "user_002": {
+                    "full_name": "Jane Doe",
+                    "role": "designer",
+                    "extra": {"department": "Design"},
+                },
+            }
+        ],
     )
     tags: Optional[List[str]] = Field(
-        default=None,
-        description="标签列表",
-        examples=[["work", "technical"]]
+        default=None, description="Tag list", examples=[["work", "technical"]]
     )
 
     model_config = {
@@ -302,15 +265,19 @@ class ConversationMetaCreateRequest(BaseModel):
                 "version": "1.0",
                 "scene": "group_chat",
                 "scene_desc": {"bot_ids": ["bot_001"], "type": "project_discussion"},
-                "name": "项目讨论群",
-                "description": "新功能开发技术讨论",
+                "name": "Project Discussion Group",
+                "description": "Technical discussion for new feature development",
                 "group_id": "group_123",
                 "created_at": "2025-01-15T10:00:00+00:00",
                 "default_timezone": "UTC",
                 "user_details": {
-                    "user_001": {"full_name": "张三", "role": "developer", "extra": {"department": "Engineering"}}
+                    "user_001": {
+                        "full_name": "John Smith",
+                        "role": "developer",
+                        "extra": {"department": "Engineering"},
+                    }
                 },
-                "tags": ["work", "technical"]
+                "tags": ["work", "technical"],
             }
         }
     }
@@ -318,54 +285,47 @@ class ConversationMetaCreateRequest(BaseModel):
 
 class ConversationMetaPatchRequest(BaseModel):
     """
-    部分更新会话元数据请求体
-    
-    用于 PATCH /api/v1/memories/conversation-meta 接口
+    Partial update conversation metadata request body
+
+    Used for PATCH /api/v1/memories/conversation-meta endpoint
     """
-    
+
     group_id: str = Field(
-        ...,
-        description="要更新的群组 ID（必填）",
-        examples=["group_123"]
+        ..., description="Group ID to update (required)", examples=["group_123"]
     )
     name: Optional[str] = Field(
         default=None,
-        description="新的会话名称",
-        examples=["新会话名称"]
+        description="New conversation name",
+        examples=["New Conversation Name"],
     )
     description: Optional[str] = Field(
         default=None,
-        description="新的会话描述",
-        examples=["更新后的描述"]
+        description="New conversation description",
+        examples=["Updated description"],
     )
     scene_desc: Optional[Dict[str, Any]] = Field(
         default=None,
-        description="新的场景描述",
-        examples=[{"bot_ids": ["bot_002"]}]
+        description="New scene description",
+        examples=[{"bot_ids": ["bot_002"]}],
     )
     tags: Optional[List[str]] = Field(
-        default=None,
-        description="新的标签列表",
-        examples=[["tag1", "tag2"]]
+        default=None, description="New tag list", examples=[["tag1", "tag2"]]
     )
     user_details: Optional[Dict[str, UserDetailRequest]] = Field(
         default=None,
-        description="新的用户详情（将完全替换现有的 user_details）",
-        examples=[{"user_001": {"full_name": "张三", "role": "lead"}}]
+        description="New user details (will completely replace existing user_details)",
+        examples=[{"user_001": {"full_name": "John Smith", "role": "lead"}}],
     )
     default_timezone: Optional[str] = Field(
-        default=None,
-        description="新的默认时区",
-        examples=["Asia/Shanghai"]
+        default=None, description="New default timezone", examples=["Asia/Shanghai"]
     )
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "group_id": "group_123",
-                "name": "新会话名称",
-                "tags": ["updated", "tags"]
+                "name": "New Conversation Name",
+                "tags": ["updated", "tags"],
             }
         }
     }
-

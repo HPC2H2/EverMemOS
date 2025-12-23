@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-请求状态 DTO
+Request Status DTO
 
-用于请求状态 API 的数据传输对象。
+Data transfer objects for request status API.
 """
 
 from typing import Any, Dict, Optional
@@ -12,34 +12,45 @@ from pydantic import BaseModel, Field
 
 class RequestStatusResponse(BaseModel):
     """
-    请求状态响应
+    Request status response
 
-    包含请求的详细状态信息。
+    Contains detailed status information of the request.
     """
 
-    success: bool = Field(..., description="查询是否成功")
-    found: bool = Field(default=False, description="是否找到请求状态")
-    data: Optional[Dict[str, Any]] = Field(default=None, description="请求状态数据")
-    message: Optional[str] = Field(default=None, description="提示信息")
+    success: bool = Field(..., description="Whether the query was successful")
+    found: bool = Field(
+        default=False, description="Whether the request status was found"
+    )
+    data: Optional[Dict[str, Any]] = Field(
+        default=None, description="Request status data"
+    )
+    message: Optional[str] = Field(default=None, description="Message")
 
 
 class RequestStatusData(BaseModel):
     """
-    请求状态数据模型
+    Request status data model
 
-    Redis 中存储的请求状态信息。
+    Request status information stored in Redis.
     """
 
-    organization_id: str = Field(..., description="组织 ID")
-    space_id: str = Field(..., description="空间 ID")
-    request_id: str = Field(..., description="请求 ID")
-    status: str = Field(..., description="请求状态（start/success/failed）")
-    url: Optional[str] = Field(default=None, description="请求 URL")
-    method: Optional[str] = Field(default=None, description="HTTP 方法")
-    http_code: Optional[int] = Field(default=None, description="HTTP 状态码")
-    time_ms: Optional[int] = Field(default=None, description="请求耗时（毫秒）")
-    error_message: Optional[str] = Field(default=None, description="错误信息")
-    start_time: Optional[int] = Field(default=None, description="开始时间戳（毫秒）")
-    end_time: Optional[int] = Field(default=None, description="结束时间戳（毫秒）")
-    ttl_seconds: Optional[int] = Field(default=None, description="剩余 TTL（秒）")
-
+    organization_id: str = Field(..., description="Organization ID")
+    space_id: str = Field(..., description="Space ID")
+    request_id: str = Field(..., description="Request ID")
+    status: str = Field(..., description="Request status (start/success/failed)")
+    url: Optional[str] = Field(default=None, description="Request URL")
+    method: Optional[str] = Field(default=None, description="HTTP method")
+    http_code: Optional[int] = Field(default=None, description="HTTP status code")
+    time_ms: Optional[int] = Field(
+        default=None, description="Request duration (milliseconds)"
+    )
+    error_message: Optional[str] = Field(default=None, description="Error message")
+    start_time: Optional[int] = Field(
+        default=None, description="Start timestamp (milliseconds)"
+    )
+    end_time: Optional[int] = Field(
+        default=None, description="End timestamp (milliseconds)"
+    )
+    ttl_seconds: Optional[int] = Field(
+        default=None, description="Remaining TTL (seconds)"
+    )
