@@ -18,6 +18,7 @@ Usage:
     python tests/test_memory_controller.py --test-method search     # Same as retrieve
     python tests/test_memory_controller.py --test-method memorize   # Run memorization tests
     python tests/test_memory_controller.py --test-method meta       # Run metadata tests
+    python tests/test_memory_controller.py --test-method delete     # Run delete tests
     
     # Test a specific method
     python tests/test_memory_controller.py --test-method fetch_episodic
@@ -27,6 +28,7 @@ Usage:
     python tests/test_memory_controller.py --test-method fetch_combined_filters
     python tests/test_memory_controller.py --test-method fetch_all_types
     python tests/test_memory_controller.py --test-method search_keyword
+    python tests/test_memory_controller.py --test-method delete_memories
     
     # Test all methods except certain ones (parameters separated by commas)
     python tests/test_memory_controller.py --except-test-method memorize
@@ -312,6 +314,53 @@ class MemoryControllerTester:
         try:
             response = requests.patch(
                 url, json=data, headers=headers, params=params, timeout=self.timeout
+            )
+            print(f"\n📥 Response Status Code: {response.status_code}")
+            print("📥 Response Data:")
+            response_json = response.json()
+            print(json.dumps(response_json, indent=2, ensure_ascii=False))
+            return response.status_code, response_json
+        except (
+            Exception
+        ) as e:  # noqa: BLE001 Need to catch all exceptions to ensure script continues
+            print(f"\n❌ Request failed: {e}")
+            return None, None
+
+    def call_delete_api(self, endpoint: str, data: dict = None, params: dict = None):
+        """
+        Call DELETE API and print results
+
+        Args:
+            endpoint: API endpoint
+            data: Request data (placed in body, preferred method)
+            params: Query parameters (for compatibility)
+
+        Returns:
+            (status_code, response_json)
+        """
+        url = f"{self.base_url}{self.api_prefix}{endpoint}"
+        headers = self.get_tenant_headers()
+
+        # Merge sync mode parameters
+        merged_params = self._get_sync_mode_params()
+        if params:
+            merged_params.update(params)
+
+        print(f"\n📍 URL: DELETE {url}")
+        if merged_params:
+            print("📤 Query Parameters:")
+            print(json.dumps(merged_params, indent=2, ensure_ascii=False))
+        if data:
+            print("📤 Request Data (Body):")
+            print(json.dumps(data, indent=2, ensure_ascii=False))
+
+        try:
+            response = requests.delete(
+                url,
+                json=data,
+                params=merged_params,
+                headers=headers,
+                timeout=self.timeout,
             )
             print(f"\n📥 Response Status Code: {response.status_code}")
             print("📥 Response Data:")
@@ -1705,7 +1754,7 @@ class MemoryControllerTester:
         """Test 5: GET /api/v1/memories/search - Keyword search (pass parameters via body)
 
         Tests multiple scenarios for user_id/group_id parameter behavior:
-        Note: user_id and group_id cannot BOTH be QUERY_ALL (not provided or "__all__")
+        Note: user_id and group_id cannot BOTH be MAGIC_ALL (not provided or "__all__")
 
         1. Neither user_id nor group_id provided - should return 400 error
         2. Only user_id provided (group_id NOT in request, query_all for group_id)
@@ -1718,7 +1767,7 @@ class MemoryControllerTester:
 
         # =================================================================
         # Scenario 1: Neither user_id nor group_id provided - should return 400 error
-        # (user_id and group_id cannot both be QUERY_ALL)
+        # (user_id and group_id cannot both be MAGIC_ALL)
         # =================================================================
         print(
             "\n--- Scenario 1: Neither user_id nor group_id provided (should return 400) ---"
@@ -1732,14 +1781,14 @@ class MemoryControllerTester:
 
         status_code, response = self.call_get_with_body_api("/search", data)
 
-        # Should return 400 error because user_id and group_id cannot both be QUERY_ALL
+        # Should return 400 error because user_id and group_id cannot both be MAGIC_ALL
         assert (
             status_code == 400
         ), f"[Scenario 1] Status code should be 400, actual: {status_code}"
         assert (
             response.get("status") == "failed"
         ), f"[Scenario 1] Status should be failed"
-        assert "user_id and group_id cannot both be QUERY_ALL" in response.get(
+        assert "user_id and group_id cannot both be MAGIC_ALL" in response.get(
             "message", ""
         ), f"[Scenario 1] Error message should mention the constraint, actual: {response.get('message')}"
 
@@ -1938,7 +1987,7 @@ class MemoryControllerTester:
         """Test 6: GET /api/v1/memories/search - Vector search (pass parameters via body)
 
         Tests multiple scenarios for user_id/group_id parameter behavior:
-        Note: user_id and group_id cannot BOTH be QUERY_ALL (not provided or "__all__")
+        Note: user_id and group_id cannot BOTH be MAGIC_ALL (not provided or "__all__")
 
         1. Neither user_id nor group_id provided - should return 400 error
         2. Only user_id provided (group_id NOT in request, query_all for group_id)
@@ -1964,14 +2013,14 @@ class MemoryControllerTester:
 
         status_code, response = self.call_get_with_body_api("/search", data)
 
-        # Should return 400 error because user_id and group_id cannot both be QUERY_ALL
+        # Should return 400 error because user_id and group_id cannot both be MAGIC_ALL
         assert (
             status_code == 400
         ), f"[Scenario 1] Status code should be 400, actual: {status_code}"
         assert (
             response.get("status") == "failed"
         ), f"[Scenario 1] Status should be failed"
-        assert "user_id and group_id cannot both be QUERY_ALL" in response.get(
+        assert "user_id and group_id cannot both be MAGIC_ALL" in response.get(
             "message", ""
         ), f"[Scenario 1] Error message should mention the constraint, actual: {response.get('message')}"
 
@@ -2174,7 +2223,7 @@ class MemoryControllerTester:
         """Test 7: GET /api/v1/memories/search - Hybrid search (pass parameters via body)
 
         Tests multiple scenarios for user_id/group_id parameter behavior:
-        Note: user_id and group_id cannot BOTH be QUERY_ALL (not provided or "__all__")
+        Note: user_id and group_id cannot BOTH be MAGIC_ALL (not provided or "__all__")
 
         1. Neither user_id nor group_id provided - should return 400 error
         2. Only user_id provided (group_id NOT in request, query_all for group_id)
@@ -2206,14 +2255,14 @@ class MemoryControllerTester:
 
         status_code, response = self.call_get_with_body_api("/search", data)
 
-        # Should return 400 error because user_id and group_id cannot both be QUERY_ALL
+        # Should return 400 error because user_id and group_id cannot both be MAGIC_ALL
         assert (
             status_code == 400
         ), f"[Scenario 1] Status code should be 400, actual: {status_code}"
         assert (
             response.get("status") == "failed"
         ), f"[Scenario 1] Status should be failed"
-        assert "user_id and group_id cannot both be QUERY_ALL" in response.get(
+        assert "user_id and group_id cannot both be MAGIC_ALL" in response.get(
             "message", ""
         ), f"[Scenario 1] Error message should mention the constraint, actual: {response.get('message')}"
 
@@ -2533,6 +2582,351 @@ class MemoryControllerTester:
 
         return status_code, response
 
+    def test_delete_memories(self):
+        """Test 10: DELETE /api/v1/memories - Soft delete memories (pass parameters via body)
+
+        Tests multiple scenarios for combined filter conditions:
+        1. All MAGIC_ALL - should return 422 error (Pydantic validation)
+        2. Only event_id (single record deletion)
+        3. Only user_id (batch deletion by user)
+        4. Only group_id (batch deletion by group)
+        5. user_id + group_id (combined filters)
+        6. Query parameters compatibility test
+        """
+        self.print_section("Test 10: DELETE /api/v1/memories - Soft Delete Memories")
+
+        # =================================================================
+        # Scenario 1: All MAGIC_ALL - should return 422 error (Pydantic validation)
+        # =================================================================
+        print("\n--- Scenario 1: All parameters are MAGIC_ALL (should return 422) ---")
+        data = {
+            "event_id": "__all__",
+            "user_id": "__all__",
+            "group_id": "__all__",
+        }
+
+        status_code, response = self.call_delete_api("", data)
+
+        # Should return 422 error (Pydantic model validation failed)
+        assert (
+            status_code == 422
+        ), f"[Scenario 1] Status code should be 422, actual: {status_code}"
+        # Pydantic validation errors return "detail" instead of "status"
+        assert (
+            "detail" in response
+        ), f"[Scenario 1] Response should contain detail field for validation error"
+
+        print(
+            "✅ Scenario 1 successful, correctly returned 422 error for invalid request"
+        )
+
+        # =================================================================
+        # Scenario 2: Only event_id (single record deletion)
+        # =================================================================
+        print("\n--- Scenario 2: Only event_id (delete single memory) ---")
+
+        # First, memorize a message to get an event_id for deletion
+        print("  Step 1: Create a test memory...")
+        base_time = datetime.now(ZoneInfo("UTC"))
+        memorize_data = {
+            "group_id": self.group_id,
+            "group_name": "Delete Test Group",
+            "message_id": f"msg_delete_test_{uuid.uuid4().hex[:8]}",
+            "create_time": base_time.isoformat(),
+            "sender": self.user_id,
+            "sender_name": "Delete Test User",
+            "content": "This is a test message for deletion.",
+            "refer_list": [],
+        }
+
+        memorize_status, _ = self.call_post_api("", memorize_data)
+        assert (
+            memorize_status == 200
+        ), f"Failed to create test memory: {memorize_status}"
+
+        # Get some memories to find an event_id to delete
+        print("  Step 2: Fetch memories to get event_id...")
+        fetch_data = {
+            "user_id": self.user_id,
+            "group_id": self.group_id,
+            "memory_type": "episodic_memory",
+            "limit": 1,
+        }
+
+        fetch_status, fetch_response = self.call_get_with_body_api("", fetch_data)
+
+        event_id_to_delete = None
+        if (
+            fetch_status == 200
+            and fetch_response.get("result", {}).get("total_count", 0) > 0
+        ):
+            memories = fetch_response["result"]["memories"]
+            if len(memories) > 0:
+                # Get event_id (which is _id in the database)
+                event_id_to_delete = memories[0].get("event_id") or memories[0].get(
+                    "id"
+                )
+
+        if event_id_to_delete:
+            print(f"  Step 3: Delete memory with event_id={event_id_to_delete}...")
+            delete_data = {
+                "event_id": event_id_to_delete,
+                "user_id": "__all__",
+                "group_id": "__all__",
+            }
+
+            status_code, response = self.call_delete_api("", delete_data)
+
+            # Validate response
+            assert (
+                status_code == 200
+            ), f"[Scenario 2] Status code should be 200, actual: {status_code}"
+            assert (
+                response.get("status") == "ok"
+            ), f"[Scenario 2] Status should be ok"
+            assert "result" in response, "[Scenario 2] Response should contain result"
+
+            result = response["result"]
+            assert (
+                "filters" in result
+            ), "[Scenario 2] result should contain filters field"
+            assert "count" in result, "[Scenario 2] result should contain count field"
+            assert (
+                "event_id" in result["filters"]
+            ), "[Scenario 2] filters should contain event_id"
+            assert result["count"] >= 0, "[Scenario 2] count should be >= 0"
+
+            print(
+                f"✅ Scenario 2 successful, deleted {result['count']} memory by event_id"
+            )
+        else:
+            print(
+                "⚠️  Scenario 2 skipped: No memories found to delete (this is okay for fresh test environment)"
+            )
+
+        # =================================================================
+        # Scenario 3: Only user_id (batch deletion by user)
+        # =================================================================
+        print("\n--- Scenario 3: Only user_id (batch delete by user) ---")
+
+        # Create a unique test user for this scenario
+        test_user_id = f"delete_test_user_{uuid.uuid4().hex[:8]}"
+
+        # Create some test memories for this user
+        print(f"  Step 1: Create test memories for user_id={test_user_id}...")
+        for i in range(3):
+            memorize_data = {
+                "group_id": self.group_id,
+                "group_name": "Delete Test Group",
+                "message_id": f"msg_user_delete_{uuid.uuid4().hex[:8]}",
+                "create_time": (
+                    datetime.now(ZoneInfo("UTC")) + timedelta(seconds=i)
+                ).isoformat(),
+                "sender": test_user_id,
+                "sender_name": "Batch Delete Test User",
+                "content": f"Test message {i+1} for batch deletion by user.",
+                "refer_list": [],
+            }
+            self.call_post_api("", memorize_data)
+
+        print(f"  Step 2: Delete all memories for user_id={test_user_id}...")
+        delete_data = {
+            "event_id": "__all__",
+            "user_id": test_user_id,
+            "group_id": "__all__",
+        }
+
+        status_code, response = self.call_delete_api("", delete_data)
+
+        # Validate response
+        if status_code == 200:
+            assert (
+                response.get("status") == "ok"
+            ), f"[Scenario 3] Status should be ok"
+            result = response["result"]
+            assert (
+                "user_id" in result["filters"]
+            ), "[Scenario 3] filters should contain user_id"
+            print(
+                f"✅ Scenario 3 successful, deleted {result['count']} memories by user_id"
+            )
+        elif status_code == 404:
+            print(
+                "⚠️  Scenario 3: No memories found to delete (this is okay if boundary detection didn't extract memories yet)"
+            )
+        else:
+            print(
+                f"⚠️  Scenario 3: Unexpected status code {status_code}: {response.get('message')}"
+            )
+
+        # =================================================================
+        # Scenario 4: Only group_id (batch deletion by group)
+        # =================================================================
+        print("\n--- Scenario 4: Only group_id (batch delete by group) ---")
+
+        # Create a unique test group for this scenario
+        test_group_id = f"delete_test_group_{uuid.uuid4().hex[:8]}"
+
+        # Create some test memories for this group
+        print(f"  Step 1: Create test memories for group_id={test_group_id}...")
+        for i in range(2):
+            memorize_data = {
+                "group_id": test_group_id,
+                "group_name": "Batch Delete Test Group",
+                "message_id": f"msg_group_delete_{uuid.uuid4().hex[:8]}",
+                "create_time": (
+                    datetime.now(ZoneInfo("UTC")) + timedelta(seconds=i)
+                ).isoformat(),
+                "sender": self.user_id,
+                "sender_name": "Group Delete Test User",
+                "content": f"Test message {i+1} for batch deletion by group.",
+                "refer_list": [],
+            }
+            self.call_post_api("", memorize_data)
+
+        print(f"  Step 2: Delete all memories for group_id={test_group_id}...")
+        delete_data = {
+            "event_id": "__all__",
+            "user_id": "__all__",
+            "group_id": test_group_id,
+        }
+
+        status_code, response = self.call_delete_api("", delete_data)
+
+        # Validate response
+        if status_code == 200:
+            assert (
+                response.get("status") == "ok"
+            ), f"[Scenario 4] Status should be ok"
+            result = response["result"]
+            assert (
+                "group_id" in result["filters"]
+            ), "[Scenario 4] filters should contain group_id"
+            print(
+                f"✅ Scenario 4 successful, deleted {result['count']} memories by group_id"
+            )
+        elif status_code == 404:
+            print(
+                "⚠️  Scenario 4: No memories found to delete (this is okay if boundary detection didn't extract memories yet)"
+            )
+        else:
+            print(
+                f"⚠️  Scenario 4: Unexpected status code {status_code}: {response.get('message')}"
+            )
+
+        # =================================================================
+        # Scenario 5: user_id + group_id (combined filters)
+        # =================================================================
+        print("\n--- Scenario 5: user_id + group_id (combined filter deletion) ---")
+
+        # Create a unique test user and group for this scenario
+        combined_user_id = f"combined_user_{uuid.uuid4().hex[:8]}"
+        combined_group_id = f"combined_group_{uuid.uuid4().hex[:8]}"
+
+        # Create test memories with specific user + group combination
+        print(
+            f"  Step 1: Create test memories for user_id={combined_user_id}, group_id={combined_group_id}..."
+        )
+        for i in range(2):
+            memorize_data = {
+                "group_id": combined_group_id,
+                "group_name": "Combined Filter Test Group",
+                "message_id": f"msg_combined_delete_{uuid.uuid4().hex[:8]}",
+                "create_time": (
+                    datetime.now(ZoneInfo("UTC")) + timedelta(seconds=i)
+                ).isoformat(),
+                "sender": combined_user_id,
+                "sender_name": "Combined Filter Test User",
+                "content": f"Test message {i+1} for combined filter deletion.",
+                "refer_list": [],
+            }
+            self.call_post_api("", memorize_data)
+
+        print(
+            f"  Step 2: Delete memories matching both user_id={combined_user_id} AND group_id={combined_group_id}..."
+        )
+        delete_data = {
+            "event_id": "__all__",
+            "user_id": combined_user_id,
+            "group_id": combined_group_id,
+        }
+
+        status_code, response = self.call_delete_api("", delete_data)
+
+        # Validate response
+        if status_code == 200:
+            assert (
+                response.get("status") == "ok"
+            ), f"[Scenario 5] Status should be ok"
+            result = response["result"]
+            assert (
+                "user_id" in result["filters"] and "group_id" in result["filters"]
+            ), "[Scenario 5] filters should contain both user_id and group_id"
+            print(
+                f"✅ Scenario 5 successful, deleted {result['count']} memories with combined filters"
+            )
+        elif status_code == 404:
+            print(
+                "⚠️  Scenario 5: No memories found to delete (this is okay if boundary detection didn't extract memories yet)"
+            )
+        else:
+            print(
+                f"⚠️  Scenario 5: Unexpected status code {status_code}: {response.get('message')}"
+            )
+
+        # =================================================================
+        # Scenario 6: Test with query parameters (compatibility)
+        # =================================================================
+        print(
+            "\n--- Scenario 6: Delete using query parameters (compatibility test) ---"
+        )
+
+        # Create a unique test user for query params test
+        query_user_id = f"query_delete_user_{uuid.uuid4().hex[:8]}"
+
+        # Create test memory
+        print(f"  Step 1: Create test memory for user_id={query_user_id}...")
+        memorize_data = {
+            "group_id": self.group_id,
+            "group_name": "Query Params Test Group",
+            "message_id": f"msg_query_delete_{uuid.uuid4().hex[:8]}",
+            "create_time": datetime.now(ZoneInfo("UTC")).isoformat(),
+            "sender": query_user_id,
+            "sender_name": "Query Params Test User",
+            "content": "Test message for query params deletion.",
+            "refer_list": [],
+        }
+        self.call_post_api("", memorize_data)
+
+        print(f"  Step 2: Delete using query parameters...")
+        # Use query params instead of body
+        params = {
+            "user_id": query_user_id,
+        }
+
+        status_code, response = self.call_delete_api("", params=params)
+
+        # Validate response
+        if status_code == 200:
+            assert (
+                response.get("status") == "ok"
+            ), f"[Scenario 6] Status should be ok"
+            result = response["result"]
+            print(
+                f"✅ Scenario 6 successful, deleted {result['count']} memories using query params"
+            )
+        elif status_code == 404:
+            print(
+                "⚠️  Scenario 6: No memories found to delete (this is okay if boundary detection didn't extract memories yet)"
+            )
+        else:
+            print(
+                f"⚠️  Scenario 6: Unexpected status code {status_code}: {response.get('message')}"
+            )
+
+        print(f"\n✅ All Delete Memory Scenarios Completed")
+        return status_code, response
+
     def run_all_tests(self, test_method: str = "all", except_test_methods: str = None):
         """
         Run tests
@@ -2544,6 +2938,7 @@ class MemoryControllerTester:
                 - retrieve/search: Run all retrieve/search-related tests (batch)
                 - memorize: Test storing conversation memory / Run memorization tests (batch)
                 - meta: Run metadata-related tests (batch)
+                - delete: Run delete-related tests (batch)
                 - fetch_episodic: Test fetching episodic memory
                 - fetch_foresight: Test fetching foresight memory
                 - fetch_event_log: Test fetching event log
@@ -2557,6 +2952,7 @@ class MemoryControllerTester:
                 - search_hybrid: Test hybrid search
                 - save_meta: Test saving conversation metadata
                 - patch_meta: Test updating conversation metadata
+                - delete_memories: Test soft delete memories
             except_test_methods: Specify test methods to exclude (comma-separated), e.g.: "memorize,fetch_episodic"
                 When specified, run all tests except these methods
         """
@@ -2596,6 +2992,7 @@ class MemoryControllerTester:
             "search_hybrid": self.test_search_memories_hybrid,
             "save_meta": self.test_save_conversation_meta,
             "patch_meta": self.test_patch_conversation_meta,
+            "delete_memories": self.test_delete_memories,
         }
 
         # Define test type grouping
@@ -2618,6 +3015,7 @@ class MemoryControllerTester:
             ],
             "memorize": ["memorize"],
             "meta": ["save_meta", "patch_meta"],
+            "delete": ["delete_memories"],
         }
 
         # Parse excluded test methods list
@@ -2788,6 +3186,7 @@ Usage Examples:
             "search",
             "memorize",
             "meta",
+            "delete",
             # Individual methods
             "fetch_episodic",
             "fetch_foresight",
@@ -2802,8 +3201,9 @@ Usage Examples:
             "search_hybrid",
             "save_meta",
             "patch_meta",
+            "delete_memories",
         ],
-        help="Specify test method to run (default: all). Supports batch categories (fetch, retrieve/search, memorize, meta) or individual test methods",
+        help="Specify test method to run (default: all). Supports batch categories (fetch, retrieve/search, memorize, meta, delete) or individual test methods",
     )
 
     parser.add_argument(

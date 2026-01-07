@@ -15,7 +15,7 @@ from core.di import service
 from core.di.utils import get_bean_by_type
 from core.observation.logger import get_logger
 from core.context.context import get_current_app_info
-from core.oxm.constants import QUERY_ALL
+from core.oxm.constants import MAGIC_ALL
 from api_specs.dtos.memory_command import MemorizeRequest, RawData
 from api_specs.dtos.memory_query import PendingMessage
 from infra_layer.adapters.out.persistence.document.request.memory_request_log import (
@@ -280,8 +280,8 @@ class MemoryRequestLogService:
 
     async def get_pending_request_logs(
         self,
-        user_id: Optional[str] = QUERY_ALL,
-        group_id: Optional[str] = QUERY_ALL,
+        user_id: Optional[str] = MAGIC_ALL,
+        group_id: Optional[str] = MAGIC_ALL,
         sync_status_list: Optional[List[int]] = None,
         limit: int = 1000,
         skip: int = 0,
@@ -291,18 +291,18 @@ class MemoryRequestLogService:
         Get pending (unconsumed) Memory request logs
 
         Query request logs that have not been consumed yet (sync_status=-1 or 0).
-        Supports flexible filtering with QUERY_ALL logic:
-        - QUERY_ALL ("__all__"): Don't filter by this field
+        Supports flexible filtering with MAGIC_ALL logic:
+        - MAGIC_ALL ("__all__"): Don't filter by this field
         - None or "": Filter for null/empty values
         - Other values: Exact match
 
         Args:
             user_id: User ID filter
-                - QUERY_ALL: Don't filter by user_id (default)
+                - MAGIC_ALL: Don't filter by user_id (default)
                 - None or "": Filter for null/empty values
                 - Other values: Exact match
             group_id: Group ID filter
-                - QUERY_ALL: Don't filter by group_id (default)
+                - MAGIC_ALL: Don't filter by group_id (default)
                 - None or "": Filter for null/empty values
                 - Other values: Exact match
             sync_status_list: List of sync_status values to filter by
@@ -354,8 +354,8 @@ class MemoryRequestLogService:
 
     async def get_pending_messages(
         self,
-        user_id: Optional[str] = QUERY_ALL,
-        group_id: Optional[str] = QUERY_ALL,
+        user_id: Optional[str] = MAGIC_ALL,
+        group_id: Optional[str] = MAGIC_ALL,
         limit: int = 1000,
     ) -> List[PendingMessage]:
         """
@@ -365,8 +365,8 @@ class MemoryRequestLogService:
         and converts the results to PendingMessage dataclass instances.
 
         Args:
-            user_id: User ID filter (QUERY_ALL to skip filtering)
-            group_id: Group ID filter (QUERY_ALL to skip filtering)
+            user_id: User ID filter (MAGIC_ALL to skip filtering)
+            group_id: Group ID filter (MAGIC_ALL to skip filtering)
             limit: Maximum number of records to return (default 1000)
 
         Returns:

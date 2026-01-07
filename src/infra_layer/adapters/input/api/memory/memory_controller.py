@@ -16,7 +16,7 @@ from fastapi import HTTPException, Request as FastAPIRequest
 
 from core.di.decorators import controller
 from core.di import get_bean_by_type
-from core.interface.controller.base_controller import BaseController, get, post, patch
+from core.interface.controller.base_controller import BaseController, get, post, patch, delete
 from core.constants.errors import ErrorCode, ErrorStatus
 from agentic_layer.memory_manager import MemoryManager
 from api_specs.request_converter import (
@@ -38,11 +38,13 @@ from infra_layer.adapters.input.api.dto.memory_dto import (
     SearchMemoriesRequest,
     ConversationMetaCreateRequest,
     ConversationMetaPatchRequest,
+    DeleteMemoriesRequest,
 )
 from core.request.timeout_background import timeout_to_background
 from core.request import log_request
 from core.component.redis_provider import RedisProvider
 from service.memory_request_log_service import MemoryRequestLogService
+from service.memcell_delete_service import MemCellDeleteService
 from api_specs.memory_types import RawDataType
 
 logger = logging.getLogger(__name__)
@@ -1011,4 +1013,227 @@ class MemoryController(BaseController):
             raise HTTPException(
                 status_code=500,
                 detail="Failed to update conversation metadata, please try again later",
+            ) from e
+
+    @delete(
+        "",
+        response_model=Dict[str, Any],
+        summary="Delete memories (soft delete)",
+        description="""
+        Soft delete MemCell records based on combined filter criteria
+        
+        ## Functionality:
+        - Soft delete records matching combined filter conditions
+        - If multiple conditions provided, ALL must be satisfied (AND logic)
+        - Use MAGIC_ALL ("__all__") to skip a specific filter
+        - At least one filter must be specified (not all MAGIC_ALL)
+        
+        ## Filter Parameters (combined with AND):
+        - **event_id**: Filter by specific event_id
+        - **user_id**: Filter by user ID
+        - **group_id**: Filter by group ID
+        
+        ## Examples:
+        - event_id only: Delete specific memory
+        - user_id only: Delete all user's memories
+        - user_id + group_id: Delete user's memories in specific group
+        - event_id + user_id + group_id: Delete if all conditions match
+        
+        ## Soft Delete:
+        - Records are marked as deleted, not physically removed
+        - Deleted records can be restored if needed
+        - Deleted records won't appear in regular queries
+        
+        ## Use cases:
+        - User requests data deletion
+        - Group chat cleanup
+        - Privacy compliance (GDPR, etc.)
+        - Conversation history management
+        """,
+        responses={
+            200: {
+                "description": "Successfully deleted memories",
+                "content": {
+                    "application/json": {
+                        "examples": {
+                            "single": {
+                                "summary": "Delete by event_id only",
+                                "value": {
+                                    "status": "ok",
+                                    "message": "Successfully deleted 1 memory",
+                                    "result": {
+                                        "filters": ["event_id"],
+                                        "count": 1,
+                                    },
+                                },
+                            },
+                            "batch_user": {
+                                "summary": "Delete by user_id only",
+                                "value": {
+                                    "status": "ok",
+                                    "message": "Successfully deleted 25 memories",
+                                    "result": {
+                                        "filters": ["user_id"],
+                                        "count": 25,
+                                    },
+                                },
+                            },
+                            "combined": {
+                                "summary": "Delete by user_id and group_id",
+                                "value": {
+                                    "status": "ok",
+                                    "message": "Successfully deleted 10 memories",
+                                    "result": {
+                                        "filters": ["user_id", "group_id"],
+                                        "count": 10,
+                                    },
+                                },
+                            },
+                        }
+                    }
+                },
+            },
+            400: {
+                "description": "Request parameter error",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "status": ErrorStatus.FAILED.value,
+                            "code": ErrorCode.INVALID_PARAMETER.value,
+                            "message": "At least one of event_id, user_id, or group_id must be provided (not MAGIC_ALL)",
+                            "timestamp": "2025-01-15T10:30:00+00:00",
+                            "path": "/api/v1/memories",
+                        }
+                    }
+                },
+            },
+            404: {
+                "description": "Memory not found",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "status": ErrorStatus.FAILED.value,
+                            "code": ErrorCode.RESOURCE_NOT_FOUND.value,
+                            "message": "No memories found matching the criteria or already deleted",
+                            "timestamp": "2025-01-15T10:30:00+00:00",
+                            "path": "/api/v1/memories",
+                        }
+                    }
+                },
+            },
+            500: {
+                "description": "Internal server error",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "status": ErrorStatus.FAILED.value,
+                            "code": ErrorCode.SYSTEM_ERROR.value,
+                            "message": "Failed to delete memories, please try again later",
+                            "timestamp": "2025-01-15T10:30:00+00:00",
+                            "path": "/api/v1/memories",
+                        }
+                    }
+                },
+            },
+        },
+    )
+    async def delete_memories(
+        self,
+        fastapi_request: FastAPIRequest,
+        request_body: DeleteMemoriesRequest = None,  # OpenAPI documentation (body params)
+    ) -> Dict[str, Any]:
+        """
+        Soft delete memory data based on combined filter criteria
+
+        Filters are combined with AND logic. Use MAGIC_ALL to skip a filter.
+
+        Args:
+            fastapi_request: FastAPI request object
+            request_body: Request body parameters (used for OpenAPI documentation only)
+
+        Returns:
+            Dict[str, Any]: Delete result response
+
+        Raises:
+            HTTPException: When request processing fails
+        """
+        del request_body  # Used for OpenAPI documentation only
+        
+        try:
+            from core.oxm.constants import MAGIC_ALL
+
+            # Get params from query params first (for compatibility)
+            params = dict(fastapi_request.query_params)
+
+            # Try to get params from body (preferred method)
+            if body := await fastapi_request.body():
+                with suppress(json.JSONDecodeError, TypeError):
+                    if isinstance(body_data := json.loads(body), dict):
+                        params.update(body_data)
+
+            # Extract and validate parameters using DeleteMemoriesRequest
+            try:
+                delete_request = DeleteMemoriesRequest(
+                    event_id=params.get("event_id", MAGIC_ALL),
+                    user_id=params.get("user_id", MAGIC_ALL),
+                    group_id=params.get("group_id", MAGIC_ALL),
+                )
+            except ValueError as e:
+                logger.error("Delete request validation failed: %s", e)
+                raise HTTPException(status_code=400, detail=str(e)) from e
+
+            logger.info(
+                "Received delete request: event_id=%s, user_id=%s, group_id=%s",
+                delete_request.event_id,
+                delete_request.user_id,
+                delete_request.group_id,
+            )
+
+            # Get delete service
+            delete_service = get_bean_by_type(MemCellDeleteService)
+
+            # Execute delete operation (combined filters)
+            result = await delete_service.delete_by_combined_criteria(
+                event_id=delete_request.event_id,
+                user_id=delete_request.user_id,
+                group_id=delete_request.group_id,
+            )
+
+            # Check if deletion was successful
+            if not result["success"]:
+                error_msg = result.get("error", "No memories found matching the criteria or already deleted")
+                logger.warning(
+                    "Delete operation returned no results: %s",
+                    result,
+                )
+                raise HTTPException(
+                    status_code=404,
+                    detail=error_msg,
+                )
+
+            # Log successful deletion
+            logger.info(
+                "Delete request completed successfully: filters=%s, count=%d",
+                result["filters"],
+                result["count"],
+            )
+
+            # Return success response
+            return {
+                "status": ErrorStatus.OK.value,
+                "message": f"Successfully deleted {result['count']} {'memory' if result['count'] == 1 else 'memories'}",
+                "result": {
+                    "filters": result["filters"],
+                    "count": result["count"],
+                },
+            }
+
+        except HTTPException:
+            # Re-raise HTTPException
+            raise
+        except Exception as e:
+            logger.error("Delete request processing failed: %s", e, exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to delete memories, please try again later",
             ) from e

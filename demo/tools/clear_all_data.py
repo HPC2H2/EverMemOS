@@ -56,6 +56,7 @@ async def _clear_mongodb(verbose: bool = True) -> Dict[str, Any]:
             count = await collection.count_documents({})
             if count == 0:
                 continue
+            # todo delete many without repository
             delete_result = await collection.delete_many({})
             deleted = delete_result.deleted_count if delete_result else 0
             result["collections"][coll_name] = count

@@ -11,7 +11,7 @@ from bson import ObjectId
 from core.observation.logger import get_logger
 from core.di.decorators import repository
 from core.oxm.mongo.base_repository import BaseRepository
-from core.oxm.constants import QUERY_ALL
+from core.oxm.constants import MAGIC_ALL
 from infra_layer.adapters.out.persistence.document.memory.event_log_record import (
     EventLogRecord,
     EventLogRecordProjection,
@@ -156,8 +156,8 @@ class EventLogRecordRawRepository(BaseRepository[EventLogRecord]):
 
     async def find_by_filters(
         self,
-        user_id: Optional[str] = QUERY_ALL,
-        group_id: Optional[str] = QUERY_ALL,
+        user_id: Optional[str] = MAGIC_ALL,
+        group_id: Optional[str] = MAGIC_ALL,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
         limit: Optional[int] = None,
@@ -171,11 +171,11 @@ class EventLogRecordRawRepository(BaseRepository[EventLogRecord]):
 
         Args:
             user_id: User ID
-                - Not provided or QUERY_ALL ("__all__"): Don't filter by user_id
+                - Not provided or MAGIC_ALL ("__all__"): Don't filter by user_id
                 - None or "": Filter for null/empty values (records with user_id as None or "")
                 - Other values: Exact match
             group_id: Group ID
-                - Not provided or QUERY_ALL ("__all__"): Don't filter by group_id
+                - Not provided or MAGIC_ALL ("__all__"): Don't filter by group_id
                 - None or "": Filter for null/empty values (records with group_id as None or "")
                 - Other values: Exact match
             start_time: Optional start time (inclusive)
@@ -202,7 +202,7 @@ class EventLogRecordRawRepository(BaseRepository[EventLogRecord]):
                 filter_dict["timestamp"] = {"$lt": end_time}
 
             # Handle user_id filter
-            if user_id != QUERY_ALL:
+            if user_id != MAGIC_ALL:
                 if user_id == "" or user_id is None:
                     # Explicitly filter for null or empty string
                     filter_dict["user_id"] = {"$in": [None, ""]}
@@ -210,7 +210,7 @@ class EventLogRecordRawRepository(BaseRepository[EventLogRecord]):
                     filter_dict["user_id"] = user_id
 
             # Handle group_id filter
-            if group_id != QUERY_ALL:
+            if group_id != MAGIC_ALL:
                 if group_id == "" or group_id is None:
                     # Explicitly filter for null or empty string
                     filter_dict["group_id"] = {"$in": [None, ""]}

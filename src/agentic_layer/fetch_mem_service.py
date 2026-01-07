@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, Tuple, Union
 
 from core.di import get_bean_by_type, get_bean, service
-from core.oxm.constants import QUERY_ALL
+from core.oxm.constants import MAGIC_ALL
 from common_utils.datetime_utils import from_iso_format
 from infra_layer.adapters.out.persistence.document.memory.foresight_record import (
     ForesightRecord,
@@ -142,7 +142,7 @@ class FetchMemoryServiceImpl(FetchMemoryServiceInterface):
             Dictionary mapping user_id to user details (full_name, email, phone)
         """
         try:
-            if not group_id or group_id == QUERY_ALL:
+            if not group_id or group_id == MAGIC_ALL:
                 return {}
 
             # Ensure repository is initialized
@@ -495,9 +495,9 @@ class FetchMemoryServiceImpl(FetchMemoryServiceInterface):
         Find memories by user ID and optional filters
 
         Args:
-            user_id: User ID (QUERY_ALL to skip user filtering)
+            user_id: User ID (MAGIC_ALL to skip user filtering)
             memory_type: Memory type
-            group_id: Group ID for group memory retrieval (QUERY_ALL to skip group filtering)
+            group_id: Group ID for group memory retrieval (MAGIC_ALL to skip group filtering)
             start_time: Start time for time range filtering (ISO format string)
             end_time: End time for time range filtering (ISO format string)
             version_range: Version range (start, end), closed interval [start, end].
@@ -614,7 +614,7 @@ class FetchMemoryServiceImpl(FetchMemoryServiceInterface):
                 case MemoryType.BASE_MEMORY:
                     # Base memory: extract basic information from core memory
                     # Does NOT support group_id or time filtering (single record per user)
-                    if user_id and user_id != QUERY_ALL:
+                    if user_id and user_id != MAGIC_ALL:
                         core_memory = await self._core_repo.get_by_user_id(user_id)
                         if core_memory:
                             memories = [self._convert_base_memory(core_memory)]
@@ -627,7 +627,7 @@ class FetchMemoryServiceImpl(FetchMemoryServiceInterface):
                 case MemoryType.PREFERENCE:
                     # Preferences: extract preference settings from core memory
                     # Does NOT support group_id or time filtering (single record per user)
-                    if user_id and user_id != QUERY_ALL:
+                    if user_id and user_id != MAGIC_ALL:
                         core_memory = await self._core_repo.get_by_user_id(user_id)
                         if core_memory:
                             memories = self._convert_preferences_from_core_memory(
@@ -643,7 +643,7 @@ class FetchMemoryServiceImpl(FetchMemoryServiceInterface):
                     # Behavior history: user behaviors sorted by time
                     # Does NOT support group_id or time filtering in current implementation
                     # TODO: BehaviorHistory repository needs enhancement for filtering
-                    if user_id and user_id != QUERY_ALL:
+                    if user_id and user_id != MAGIC_ALL:
                         behaviors = await self._behavior_repo.get_by_user_id(
                             user_id, limit=limit
                         )

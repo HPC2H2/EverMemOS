@@ -12,7 +12,7 @@ from pymongo.asynchronous.client_session import AsyncClientSession
 from core.observation.logger import get_logger
 from core.di.decorators import repository
 from core.oxm.mongo.base_repository import BaseRepository
-from core.oxm.constants import QUERY_ALL
+from core.oxm.constants import MAGIC_ALL
 from infra_layer.adapters.out.persistence.document.request.memory_request_log import (
     MemoryRequestLog,
 )
@@ -440,8 +440,8 @@ class MemoryRequestLogRepository(BaseRepository[MemoryRequestLog]):
 
     async def find_pending_by_filters(
         self,
-        user_id: Optional[str] = QUERY_ALL,
-        group_id: Optional[str] = QUERY_ALL,
+        user_id: Optional[str] = MAGIC_ALL,
+        group_id: Optional[str] = MAGIC_ALL,
         sync_status_list: Optional[List[int]] = None,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
@@ -453,18 +453,18 @@ class MemoryRequestLogRepository(BaseRepository[MemoryRequestLog]):
         """
         Query pending Memory request logs by flexible filters
 
-        Supports QUERY_ALL logic similar to episodic_memory_raw_repository:
-        - QUERY_ALL ("__all__"): Don't filter by this field
+        Supports MAGIC_ALL logic similar to episodic_memory_raw_repository:
+        - MAGIC_ALL ("__all__"): Don't filter by this field
         - None or "": Filter for null/empty values
         - Other values: Exact match
 
         Args:
             user_id: User ID filter
-                - QUERY_ALL: Don't filter by user_id
+                - MAGIC_ALL: Don't filter by user_id
                 - None or "": Filter for null/empty values
                 - Other values: Exact match
             group_id: Group ID filter
-                - QUERY_ALL: Don't filter by group_id
+                - MAGIC_ALL: Don't filter by group_id
                 - None or "": Filter for null/empty values
                 - Other values: Exact match
             sync_status_list: List of sync_status values to filter by
@@ -490,16 +490,16 @@ class MemoryRequestLogRepository(BaseRepository[MemoryRequestLog]):
         try:
             query = {}
 
-            # Handle user_id filter with QUERY_ALL logic
-            if user_id != QUERY_ALL:
+            # Handle user_id filter with MAGIC_ALL logic
+            if user_id != MAGIC_ALL:
                 if user_id == "" or user_id is None:
                     # Explicitly filter for null or empty string
                     query["user_id"] = {"$in": [None, ""]}
                 else:
                     query["user_id"] = user_id
 
-            # Handle group_id filter with QUERY_ALL logic
-            if group_id != QUERY_ALL:
+            # Handle group_id filter with MAGIC_ALL logic
+            if group_id != MAGIC_ALL:
                 if group_id == "" or group_id is None:
                     # Explicitly filter for null or empty string
                     query["group_id"] = {"$in": [None, ""]}

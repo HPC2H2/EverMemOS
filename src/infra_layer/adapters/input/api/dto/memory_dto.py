@@ -8,7 +8,8 @@ These models are used to define OpenAPI parameter documentation.
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+from core.oxm.constants import MAGIC_ALL
 
 
 class MemorizeMessageRequest(BaseModel):
@@ -348,5 +349,80 @@ class ConversationMetaPatchRequest(BaseModel):
                 "name": "New Conversation Name",
                 "tags": ["updated", "tags"],
             }
+        }
+    }
+
+
+class DeleteMemoriesRequest(BaseModel):
+    """
+    Delete memories request body
+    
+    Used for DELETE /api/v1/memories endpoint
+    
+    Notes:
+    - event_id, user_id, group_id are combined filter conditions
+    - If all three are provided, all conditions must be met
+    - If not provided, use MAGIC_ALL ("__all__") to skip filtering
+    - Cannot all be MAGIC_ALL (at least one filter required)
+    """
+
+    event_id: Optional[str] = Field(
+        default=MAGIC_ALL,
+        description="Memory event_id (filter condition)",
+        examples=["507f1f77bcf86cd799439011", MAGIC_ALL],
+    )
+    user_id: Optional[str] = Field(
+        default=MAGIC_ALL,
+        description="User ID (filter condition)",
+        examples=["user_123", MAGIC_ALL],
+    )
+    group_id: Optional[str] = Field(
+        default=MAGIC_ALL,
+        description="Group ID (filter condition)",
+        examples=["group_456", MAGIC_ALL],
+    )
+
+    @model_validator(mode="after")
+    def validate_filters(self):
+        """Validate that at least one filter is provided"""
+        # Check if all are MAGIC_ALL
+        if (
+            self.event_id == MAGIC_ALL
+            and self.user_id == MAGIC_ALL
+            and self.group_id == MAGIC_ALL
+        ):
+            raise ValueError(
+                "At least one of event_id, user_id, or group_id must be provided (not MAGIC_ALL)"
+            )
+        return self
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "summary": "Delete by event_id only",
+                    "value": {
+                        "event_id": "507f1f77bcf86cd799439011",
+                        "user_id": MAGIC_ALL,
+                        "group_id": MAGIC_ALL,
+                    },
+                },
+                {
+                    "summary": "Delete by user_id only",
+                    "value": {
+                        "event_id": MAGIC_ALL,
+                        "user_id": "user_123",
+                        "group_id": MAGIC_ALL,
+                    },
+                },
+                {
+                    "summary": "Delete by user_id and group_id",
+                    "value": {
+                        "event_id": MAGIC_ALL,
+                        "user_id": "user_123",
+                        "group_id": "group_456",
+                    },
+                },
+            ]
         }
     }

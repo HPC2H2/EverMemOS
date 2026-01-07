@@ -9,7 +9,7 @@ from typing import List, Optional, Dict
 from enum import Enum
 
 from beanie import Indexed
-from core.oxm.mongo.document_base import DocumentBase
+from core.oxm.mongo.document_base_with_soft_delete import DocumentBaseWithSoftDelete
 from pydantic import BaseModel, Field, ConfigDict
 from pymongo import IndexModel, ASCENDING, DESCENDING
 from beanie import PydanticObjectId
@@ -69,11 +69,17 @@ class RawData(BaseModel):
     )
 
 
-class MemCell(DocumentBase, AuditBase):
+class MemCell(DocumentBaseWithSoftDelete, AuditBase):
     """
     MemCell document model
 
     Storage model for scene segmentation results, supporting flexible extension and high-performance queries.
+    
+    支持软删除功能：
+    - 使用 delete() 方法进行软删除
+    - 使用 find_one()、find_many() 自动过滤已删除记录
+    - 使用 hard_find_one()、hard_find_many() 查询包括已删除的记录
+    - 使用 hard_delete() 进行物理删除
     """
 
     # Core fields (required)
@@ -164,15 +170,23 @@ class MemCell(DocumentBase, AuditBase):
 
         # Index definitions
         indexes = [
-            # 2. Composite index for user queries - core query pattern
+            # 1. Soft delete support - 软删除状态索引
             IndexModel(
-                [("user_id", ASCENDING), ("timestamp", DESCENDING)],
-                name="idx_user_timestamp",
+                [("deleted_at", ASCENDING)],
+                name="idx_deleted_at",
+                sparse=True  # 只索引已删除的文档
+            ),
+            # 2. Composite index for user queries - core query pattern
+            # 包含 deleted_at 以优化软删除过滤
+            IndexModel(
+                [("user_id", ASCENDING), ("deleted_at", ASCENDING), ("timestamp", DESCENDING)],
+                name="idx_user_deleted_timestamp",
             ),
             # 3. Composite index for group queries - optimized for group chat scenarios
+            # 包含 deleted_at 以优化软删除过滤
             IndexModel(
-                [("group_id", ASCENDING), ("timestamp", DESCENDING)],
-                name="idx_group_timestamp",
+                [("group_id", ASCENDING), ("deleted_at", ASCENDING), ("timestamp", DESCENDING)],
+                name="idx_group_deleted_timestamp",
             ),
             # 4. Index for time range queries (shard key, automatically created by MongoDB)
             # Note: Shard key index is automatically created, no need to define manually
@@ -186,18 +200,20 @@ class MemCell(DocumentBase, AuditBase):
                 [
                     ("user_id", ASCENDING),
                     ("type", ASCENDING),
+                    ("deleted_at", ASCENDING),
                     ("timestamp", DESCENDING),
                 ],
-                name="idx_user_type_timestamp",
+                name="idx_user_type_deleted_timestamp",
             ),
             # 7. Composite index for group-type queries - optimized for group data type filtering
             IndexModel(
                 [
                     ('group_id', ASCENDING),
                     ("type", ASCENDING),
+                    ("deleted_at", ASCENDING),
                     ("timestamp", DESCENDING),
                 ],
-                name="idx_group_type_timestamp",
+                name="idx_group_type_deleted_timestamp",
             ),
         ]
 

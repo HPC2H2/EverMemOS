@@ -30,7 +30,7 @@ from api_specs.dtos.memory_query import (
     Metadata,
 )
 from core.di import get_bean_by_type
-from core.oxm.constants import QUERY_ALL
+from core.oxm.constants import MAGIC_ALL
 from infra_layer.adapters.out.search.repository.episodic_memory_es_repository import (
     EpisodicMemoryEsRepository,
 )

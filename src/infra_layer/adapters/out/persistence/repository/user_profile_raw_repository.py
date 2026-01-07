@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any, List
 from core.observation.logger import get_logger
 from core.di.decorators import repository
 from core.oxm.mongo.base_repository import BaseRepository
-from core.oxm.constants import QUERY_ALL
+from core.oxm.constants import MAGIC_ALL
 
 from infra_layer.adapters.out.persistence.document.memory.user_profile import (
     UserProfile,
@@ -122,8 +122,8 @@ class UserProfileRawRepository(BaseRepository[UserProfile]):
 
     async def find_by_filters(
         self,
-        user_id: Optional[str] = QUERY_ALL,
-        group_id: Optional[str] = QUERY_ALL,
+        user_id: Optional[str] = MAGIC_ALL,
+        group_id: Optional[str] = MAGIC_ALL,
         limit: Optional[int] = None,
     ) -> List[UserProfile]:
         """
@@ -131,11 +131,11 @@ class UserProfileRawRepository(BaseRepository[UserProfile]):
 
         Args:
             user_id: User ID
-                - Not provided or QUERY_ALL ("__all__"): Don't filter by user_id
+                - Not provided or MAGIC_ALL ("__all__"): Don't filter by user_id
                 - None or "": Filter for null/empty values (records with user_id as None or "")
                 - Other values: Exact match
             group_id: Group ID
-                - Not provided or QUERY_ALL ("__all__"): Don't filter by group_id
+                - Not provided or MAGIC_ALL ("__all__"): Don't filter by group_id
                 - None or "": Filter for null/empty values (records with group_id as None or "")
                 - Other values: Exact match
             limit: Limit number of returned results
@@ -148,7 +148,7 @@ class UserProfileRawRepository(BaseRepository[UserProfile]):
             conditions = []
 
             # Handle user_id filter
-            if user_id != QUERY_ALL:
+            if user_id != MAGIC_ALL:
                 if user_id == "" or user_id is None:
                     # Explicitly filter for null or empty string
                     conditions.append(
@@ -158,7 +158,7 @@ class UserProfileRawRepository(BaseRepository[UserProfile]):
                     conditions.append(UserProfile.user_id == user_id)
 
             # Handle group_id filter
-            if group_id != QUERY_ALL:
+            if group_id != MAGIC_ALL:
                 if group_id == "" or group_id is None:
                     # Explicitly filter for null or empty string
                     conditions.append(

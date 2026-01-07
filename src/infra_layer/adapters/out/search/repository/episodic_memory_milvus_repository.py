@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any, Union
 import json
 from core.oxm.milvus.base_repository import BaseMilvusRepository
-from core.oxm.constants import QUERY_ALL
+from core.oxm.constants import MAGIC_ALL
 from infra_layer.adapters.out.search.milvus.memory.episodic_memory_collection import (
     EpisodicMemoryCollection,
 )
@@ -205,16 +205,16 @@ class EpisodicMemoryMilvusRepository(BaseMilvusRepository[EpisodicMemoryCollecti
             # Build filter expression
             filter_expr = []
 
-            # Handle user_id filter: QUERY_ALL means no filter
-            if user_id != QUERY_ALL:
+            # Handle user_id filter: MAGIC_ALL means no filter
+            if user_id != MAGIC_ALL:
                 if user_id:
                     filter_expr.append(f'user_id == "{user_id}"')
                 else:
                     # Explicitly filter for null or empty
                     filter_expr.append('user_id == ""')
 
-            # Handle group_id filter: QUERY_ALL means no filter
-            if group_id != QUERY_ALL:
+            # Handle group_id filter: MAGIC_ALL means no filter
+            if group_id != MAGIC_ALL:
                 if group_id:
                     filter_expr.append(f'group_id == "{group_id}"')
                 else:
@@ -354,11 +354,11 @@ class EpisodicMemoryMilvusRepository(BaseMilvusRepository[EpisodicMemoryCollecti
         try:
             # Build filter expression
             filter_expr = []
-            # Handle user_id filter: QUERY_ALL means no filter
-            if user_id != QUERY_ALL and user_id:
+            # Handle user_id filter: MAGIC_ALL means no filter
+            if user_id != MAGIC_ALL and user_id:
                 filter_expr.append(f'user_id == "{user_id}"')
-            # Handle group_id filter: QUERY_ALL means no filter
-            if group_id != QUERY_ALL and group_id:
+            # Handle group_id filter: MAGIC_ALL means no filter
+            if group_id != MAGIC_ALL and group_id:
                 filter_expr.append(f'group_id == "{group_id}"')
             if start_time:
                 filter_expr.append(f'timestamp >= {int(start_time.timestamp())}')

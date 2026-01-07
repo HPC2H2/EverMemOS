@@ -1707,7 +1707,7 @@ class DataValidator(DataProcessor):
 class DataEnricher(DataProcessor):
     def process(self, data: dict) -> dict:
         # 丰富数据
-        data["processed_at"] = datetime.now()
+        data["processed_at"] = get_now_with_timezone()
         data["version"] = "1.0"
         return data
 

@@ -33,6 +33,7 @@ class ProfileItemType(str, Enum):
     IMPLICIT_TRAITS = "implicit_traits"
 
 
+from common_utils.datetime_utils import get_now_with_timezone
 from core.observation.logger import get_logger
 from memory_layer.llm.llm_provider import LLMProvider
 from memory_layer.memory_extractor.base_memory_extractor import MemoryExtractor
@@ -101,7 +102,7 @@ class ProfileMemoryLifeExtractor(MemoryExtractor):
                 memory_type=MemoryType.PROFILE,
                 user_id=request.user_id or "",
                 group_id=request.group_id or "",
-                timestamp=datetime.now(),
+                timestamp=get_now_with_timezone(),
                 ori_event_id_list=[],
             )
         else:
@@ -148,7 +149,7 @@ class ProfileMemoryLifeExtractor(MemoryExtractor):
                 for d in updated_dict.get(ProfileItemType.IMPLICIT_TRAITS, [])
                 if d.get("description", "").strip()  # Must have description
             ]
-            current_profile.last_updated = datetime.now()
+            current_profile.last_updated = get_now_with_timezone()
 
         # Mark as processed
         new_ep_id = new_episode.get("id", "")
@@ -408,7 +409,7 @@ class ProfileMemoryLifeExtractor(MemoryExtractor):
                     for d in result_long.get(ProfileItemType.IMPLICIT_TRAITS, [])
                     if d.get("description", "").strip()
                 ]
-                profile.last_updated = datetime.now()
+                profile.last_updated = get_now_with_timezone()
 
             return profile
 

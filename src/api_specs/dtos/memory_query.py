@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from api_specs.memory_types import BaseMemory
 from api_specs.memory_models import MemoryType, Metadata, MemoryModel, RetrieveMethod
 from common_utils.datetime_utils import get_timezone
-from core.oxm.constants import QUERY_ALL, MAX_FETCH_LIMIT, MAX_RETRIEVE_LIMIT
+from core.oxm.constants import MAGIC_ALL, MAX_FETCH_LIMIT, MAX_RETRIEVE_LIMIT
 
 
 @dataclass
@@ -13,9 +13,9 @@ class FetchMemRequest:
     """Memory retrieval request
 
     Note:
-    - user_id and group_id support special value QUERY_ALL ("__all__") to skip filtering
+    - user_id and group_id support special value MAGIC_ALL ("__all__") to skip filtering
     - Empty string or None for user_id/group_id filters for null/empty values
-    - user_id and group_id cannot both be QUERY_ALL
+    - user_id and group_id cannot both be MAGIC_ALL
     - limit is capped at MAX_FETCH_LIMIT (500)
     """
 
@@ -34,8 +34,8 @@ class FetchMemRequest:
 
     def __post_init__(self):
         """Validate request parameters"""
-        if self.user_id == QUERY_ALL and self.group_id == QUERY_ALL:
-            raise ValueError("user_id and group_id cannot both be QUERY_ALL")
+        if self.user_id == MAGIC_ALL and self.group_id == MAGIC_ALL:
+            raise ValueError("user_id and group_id cannot both be MAGIC_ALL")
 
         # Cap limit at MAX_FETCH_LIMIT
         if self.limit and self.limit > MAX_FETCH_LIMIT:
@@ -78,8 +78,8 @@ class RetrieveMemRequest:
 
     def __post_init__(self):
         """Validate request parameters"""
-        if self.user_id == QUERY_ALL and self.group_id == QUERY_ALL:
-            raise ValueError("user_id and group_id cannot both be QUERY_ALL")
+        if self.user_id == MAGIC_ALL and self.group_id == MAGIC_ALL:
+            raise ValueError("user_id and group_id cannot both be MAGIC_ALL")
 
         if self.top_k and self.top_k > MAX_RETRIEVE_LIMIT:
             self.top_k = MAX_RETRIEVE_LIMIT

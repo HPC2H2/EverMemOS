@@ -10,7 +10,7 @@ import pprint
 from typing import List, Optional, Dict, Any
 from elasticsearch.dsl import Q
 from core.oxm.es.base_repository import BaseRepository
-from core.oxm.constants import QUERY_ALL
+from core.oxm.constants import MAGIC_ALL
 from infra_layer.adapters.out.search.elasticsearch.memory.episodic_memory import (
     EpisodicMemoryDoc,
 )
@@ -250,8 +250,8 @@ class EpisodicMemoryEsRepository(BaseRepository[EpisodicMemoryDoc]):
             # Build filter conditions
             filter_queries = []
 
-            # Handle user_id filter: QUERY_ALL means no filter
-            if user_id != QUERY_ALL:
+            # Handle user_id filter: MAGIC_ALL means no filter
+            if user_id != MAGIC_ALL:
                 if user_id and user_id != "":
                     filter_queries.append(Q("term", user_id=user_id))
                 elif user_id is None or user_id == "":
@@ -260,8 +260,8 @@ class EpisodicMemoryEsRepository(BaseRepository[EpisodicMemoryDoc]):
                         Q("bool", must_not=Q("exists", field="user_id"))
                     )
 
-            # Handle group_id filter: QUERY_ALL means no filter
-            if group_id != QUERY_ALL:
+            # Handle group_id filter: MAGIC_ALL means no filter
+            if group_id != MAGIC_ALL:
                 if group_id and group_id != "":
                     filter_queries.append(Q("term", group_id=group_id))
                 elif group_id is None or group_id == "":
@@ -564,14 +564,14 @@ class EpisodicMemoryEsRepository(BaseRepository[EpisodicMemoryDoc]):
         try:
             # Build filter conditions
             filter_queries = []
-            # Handle user_id filter: QUERY_ALL means no filter
-            if user_id != QUERY_ALL and user_id is not None:
+            # Handle user_id filter: MAGIC_ALL means no filter
+            if user_id != MAGIC_ALL and user_id is not None:
                 if user_id:  # Non-empty string: personal memories
                     filter_queries.append({"term": {"user_id": user_id}})
                 else:  # Empty string: group memories
                     filter_queries.append({"term": {"user_id": ""}})
-            # Handle group_id filter: QUERY_ALL means no filter
-            if group_id != QUERY_ALL and group_id:
+            # Handle group_id filter: MAGIC_ALL means no filter
+            if group_id != MAGIC_ALL and group_id:
                 filter_queries.append({"term": {"group_id": group_id}})
             if date_range:
                 filter_queries.append({"range": {"timestamp": date_range}})

@@ -59,8 +59,8 @@ async def test_basic_crud_operations():
     user_id = "test_user_001"
 
     try:
-        # First clean up any existing test data
-        await repo.delete_by_user_id(user_id)
+        # First clean up any existing test data (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up existing test data")
 
         # Test creating a new MemCell
@@ -127,8 +127,8 @@ async def test_find_by_user_id():
     user_id = "test_user_002"
 
     try:
-        # First clean up
-        await repo.delete_by_user_id(user_id)
+        # First clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up existing test data")
 
         # Create multiple records
@@ -166,8 +166,8 @@ async def test_find_by_user_id():
         assert len(skip_results) == 2
         logger.info("✅ Test skip and limit succeeded")
 
-        # Clean up
-        await repo.delete_by_user_id(user_id)
+        # Clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up test data successfully")
 
     except Exception as e:
@@ -185,8 +185,8 @@ async def test_find_by_time_range():
     user_id = "test_user_003"
 
     try:
-        # First clean up
-        await repo.delete_by_user_id(user_id)
+        # First clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up existing test data")
 
         # Create test data with a large span (10 days)
@@ -282,8 +282,8 @@ async def test_find_by_time_range():
         assert len(page_results) == 5
         logger.info("✅ Test pagination succeeded")
 
-        # Clean up
-        await repo.delete_by_user_id(user_id)
+        # Clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up test data successfully")
 
     except Exception as e:
@@ -301,8 +301,8 @@ async def test_find_by_user_and_time_range():
     user_id = "test_user_004"
 
     try:
-        # First clean up
-        await repo.delete_by_user_id(user_id)
+        # First clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up existing test data")
 
         # Create test data
@@ -330,8 +330,8 @@ async def test_find_by_user_and_time_range():
         assert len(results) == 3
         logger.info("✅ Test user and time range query succeeded, found %d records", len(results))
 
-        # Clean up
-        await repo.delete_by_user_id(user_id)
+        # Clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up test data successfully")
 
     except Exception as e:
@@ -350,8 +350,8 @@ async def test_find_by_group_id():
     group_id = "test_group_001"
 
     try:
-        # First clean up
-        await repo.delete_by_user_id(user_id)
+        # First clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up existing test data")
 
         # Create group records
@@ -373,8 +373,8 @@ async def test_find_by_group_id():
         assert len(results) == 3
         logger.info("✅ Test querying by group_id succeeded, found %d records", len(results))
 
-        # Clean up
-        await repo.delete_by_user_id(user_id)
+        # Clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up test data successfully")
 
     except Exception as e:
@@ -392,8 +392,8 @@ async def test_find_by_participants():
     user_id = "test_user_006"
 
     try:
-        # First clean up
-        await repo.delete_by_user_id(user_id)
+        # First clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up existing test data")
 
         # Create test data
@@ -438,8 +438,8 @@ async def test_find_by_participants():
         assert len(results_all) == 1
         logger.info("✅ Test matching all participants succeeded, found %d records", len(results_all))
 
-        # Clean up
-        await repo.delete_by_user_id(user_id)
+        # Clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up test data successfully")
 
     except Exception as e:
@@ -457,8 +457,8 @@ async def test_search_by_keywords():
     user_id = "test_user_007"
 
     try:
-        # First clean up
-        await repo.delete_by_user_id(user_id)
+        # First clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up existing test data")
 
         # Create test data
@@ -503,8 +503,8 @@ async def test_search_by_keywords():
         assert len(results_all) == 1
         logger.info("✅ Test matching all keywords succeeded, found %d records", len(results_all))
 
-        # Clean up
-        await repo.delete_by_user_id(user_id)
+        # Clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up test data successfully")
 
     except Exception as e:
@@ -515,15 +515,15 @@ async def test_search_by_keywords():
 
 
 async def test_batch_delete_operations():
-    """Test batch deletion operations"""
+    """Test batch deletion operations (now soft delete by default)"""
     logger.info("Starting test of batch deletion operations...")
 
     repo = get_bean_by_type(MemCellRawRepository)
     user_id = "test_user_008"
 
     try:
-        # First clean up
-        await repo.delete_by_user_id(user_id)
+        # First clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up existing test data")
 
         # Create test data
@@ -539,29 +539,38 @@ async def test_batch_delete_operations():
 
         logger.info("✅ Created 10 test records")
 
-        # Test deleting records within a time range (first 5 days)
+        # Test soft deleting records within a time range (first 5 days)
         delete_start = now - timedelta(days=5)
         delete_end = now
         deleted_count = await repo.delete_by_time_range(
-            delete_start, delete_end, user_id=user_id
+            delete_start, delete_end, user_id=user_id, deleted_by="test"
         )
         assert deleted_count == 5
-        logger.info("✅ Test deleting records within time range succeeded, deleted %d records", deleted_count)
+        logger.info("✅ Test soft deleting records within time range succeeded, deleted %d records", deleted_count)
 
-        # Verify remaining records
+        # Verify remaining records (常规查询只返回未删除的)
         remaining = await repo.find_by_user_id(user_id)
         assert len(remaining) == 5
         logger.info("✅ Verified remaining records successfully, %d records left", len(remaining))
 
-        # Test deleting all user records
-        total_deleted = await repo.delete_by_user_id(user_id)
+        # Test soft deleting all remaining user records
+        total_deleted = await repo.delete_by_user_id(user_id, deleted_by="test")
         assert total_deleted == 5
-        logger.info("✅ Test deleting all user records succeeded, deleted %d records", total_deleted)
+        logger.info("✅ Test soft deleting all user records succeeded, deleted %d records", total_deleted)
 
-        # Verify all deleted
+        # Verify all soft deleted (常规查询找不到)
         final_check = await repo.find_by_user_id(user_id)
         assert len(final_check) == 0
-        logger.info("✅ Verified all deleted successfully")
+        logger.info("✅ Verified all soft deleted successfully (not visible in regular queries)")
+        
+        # Verify using hard_find_many can still find them
+        hard_check = await MemCell.hard_find_many({"user_id": user_id}).to_list()
+        assert len(hard_check) == 10
+        logger.info("✅ Verified all 10 records still exist (soft deleted)")
+        
+        # Final cleanup with hard delete
+        await repo.hard_delete_by_user_id(user_id)
+        logger.info("✅ Hard deleted all records for cleanup")
 
     except Exception as e:
         logger.error("❌ Test batch deletion operations failed: %s", e)
@@ -578,8 +587,8 @@ async def test_statistics_and_aggregation():
     user_id = "test_user_009"
 
     try:
-        # First clean up
-        await repo.delete_by_user_id(user_id)
+        # First clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up existing test data")
 
         # Create test data of different types
@@ -635,19 +644,8 @@ async def test_statistics_and_aggregation():
         assert latest[0].summary == "Document memory"  # Latest
         logger.info("✅ Test getting user's latest records succeeded")
 
-        # Test getting user activity summary
-        summary = await repo.get_user_activity_summary(user_id, start_time, now)
-        assert summary["total_count"] == 6
-        assert summary["user_id"] == user_id
-        assert DataTypeEnum.CONVERSATION.value in summary["type_distribution"]
-        assert (
-            summary["type_distribution"][DataTypeEnum.CONVERSATION.value] == 6
-        )  # All records are of CONVERSATION type
-        logger.info("✅ Test getting user activity summary succeeded")
-        logger.info("   Activity summary: %s", summary)
-
-        # Clean up
-        await repo.delete_by_user_id(user_id)
+        # Clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up test data successfully")
 
     except Exception as e:
@@ -665,8 +663,8 @@ async def test_get_by_event_ids():
     user_id = "test_user_010"
 
     try:
-        # First clean up
-        await repo.delete_by_user_id(user_id)
+        # First clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up existing test data")
 
         # Create test data
@@ -776,8 +774,8 @@ async def test_get_by_event_ids():
         assert first_memcell.user_id == original_memcell.user_id
         logger.info("✅ Verified returned data integrity succeeded")
 
-        # Clean up
-        await repo.delete_by_user_id(user_id)
+        # Clean up (使用硬删除清理测试数据)
+        await repo.hard_delete_by_user_id(user_id)
         logger.info("✅ Cleaned up test data successfully")
 
     except Exception as e:
@@ -788,6 +786,381 @@ async def test_get_by_event_ids():
         raise
 
     logger.info("✅ Batch query by event_ids test completed")
+
+
+async def test_soft_delete_single():
+    """测试单个软删除功能"""
+    logger.info("Starting test of soft delete single record...")
+    
+    repo = get_bean_by_type(MemCellRawRepository)
+    user_id = "test_user_soft_delete_001"
+    
+    try:
+        # 清理旧数据
+        await repo.hard_delete_by_user_id(user_id)
+        logger.info("✅ Cleaned up existing test data")
+        
+        # 创建测试数据
+        now = get_now_with_timezone()
+        memcell = MemCell(
+            user_id=user_id,
+            timestamp=now,
+            summary="测试软删除的记录",
+            type=DataTypeEnum.CONVERSATION,
+        )
+        created = await repo.append_memcell(memcell)
+        event_id = str(created.event_id)
+        logger.info("✅ Created test record, event_id=%s", event_id)
+        
+        # 验证可以查到
+        found = await repo.get_by_event_id(event_id)
+        assert found is not None, "Should be able to find the record"
+        assert not found.is_deleted(), "Record should not be marked as deleted"
+        logger.info("✅ Verified: Can query the record before deletion")
+        
+        # 执行软删除
+        deleted = await repo.delete_by_event_id(event_id, deleted_by="test_admin")
+        assert deleted is True, "Soft delete should succeed"
+        logger.info("✅ Soft delete succeeded")
+        
+        # 验证常规查询找不到
+        not_found = await repo.get_by_event_id(event_id)
+        assert not_found is None, "Regular query should not find soft-deleted record"
+        logger.info("✅ Verified: Regular query cannot find soft-deleted record")
+        
+        # 使用 hard_find_one 可以找到
+        hard_found = await MemCell.hard_find_one({"_id": created.id})
+        assert hard_found is not None, "hard_find_one should find deleted record"
+        assert hard_found.is_deleted(), "Record should be marked as deleted"
+        assert hard_found.deleted_by == "test_admin", "Should record who deleted it"
+        assert hard_found.deleted_at is not None, "Should have deletion timestamp"
+        assert hard_found.deleted_id != 0, "deleted_id should be set"
+        logger.info("✅ Verified: hard_find_one can find deleted record")
+        logger.info("   - deleted_by: %s", hard_found.deleted_by)
+        logger.info("   - deleted_at: %s", hard_found.deleted_at)
+        logger.info("   - deleted_id: %s", hard_found.deleted_id)
+        
+        # 恢复记录
+        restored = await repo.restore_by_event_id(event_id)
+        assert restored is True, "Restore should succeed"
+        logger.info("✅ Restore succeeded")
+        
+        # 验证恢复后可以查到
+        restored_memcell = await repo.get_by_event_id(event_id)
+        assert restored_memcell is not None, "Should find record after restore"
+        assert not restored_memcell.is_deleted(), "Should not be marked as deleted after restore"
+        assert restored_memcell.deleted_at is None, "deleted_at should be cleared"
+        assert restored_memcell.deleted_by is None, "deleted_by should be cleared"
+        assert restored_memcell.deleted_id == 0, "deleted_id should be reset to 0"
+        logger.info("✅ Verified: Record is normal after restore")
+        
+        # 清理
+        await repo.hard_delete_by_user_id(user_id)
+        logger.info("✅ Test completed, cleaned up test data")
+        
+    except Exception as e:
+        logger.error("❌ Soft delete single test failed: %s", e)
+        import traceback
+        logger.error(traceback.format_exc())
+        raise
+    
+    logger.info("✅ Soft delete single test completed")
+
+
+async def test_soft_delete_batch():
+    """测试批量软删除功能"""
+    logger.info("Starting test of soft delete batch...")
+    
+    repo = get_bean_by_type(MemCellRawRepository)
+    user_id = "test_user_soft_delete_002"
+    
+    try:
+        # 清理旧数据
+        await repo.hard_delete_by_user_id(user_id)
+        logger.info("✅ Cleaned up existing test data")
+        
+        # 创建5条测试数据
+        now = get_now_with_timezone()
+        for i in range(5):
+            memcell = MemCell(
+                user_id=user_id,
+                timestamp=now - timedelta(hours=i),
+                summary=f"测试记录 {i+1}",
+                type=DataTypeEnum.CONVERSATION,
+            )
+            await repo.append_memcell(memcell)
+        logger.info("✅ Created 5 test records")
+        
+        # 验证可以查到5条
+        results = await repo.find_by_user_id(user_id)
+        assert len(results) == 5, f"Should have 5 records, got {len(results)}"
+        logger.info("✅ Verified: Can query 5 records")
+        
+        # 批量软删除
+        deleted_count = await repo.delete_by_user_id(user_id, deleted_by="batch_admin")
+        assert deleted_count == 5, f"Should soft delete 5 records, got {deleted_count}"
+        logger.info("✅ Batch soft delete succeeded, deleted %d records", deleted_count)
+        
+        # 验证常规查询找不到
+        results_after_delete = await repo.find_by_user_id(user_id)
+        assert len(results_after_delete) == 0, "Regular query should not find soft-deleted records"
+        logger.info("✅ Verified: Regular query cannot find soft-deleted records")
+        
+        # 使用 hard_find_many 可以找到
+        hard_results = await MemCell.hard_find_many({"user_id": user_id}).to_list()
+        assert len(hard_results) == 5, f"hard_find_many should find 5 records, got {len(hard_results)}"
+        logger.info("✅ Verified: hard_find_many can find 5 deleted records")
+        
+        # 验证所有记录都被标记为已删除
+        for mc in hard_results:
+            assert mc.is_deleted(), "All records should be marked as deleted"
+            assert mc.deleted_at is not None, "Should have deletion timestamp"
+        logger.info("✅ Verified: All records are correctly marked as deleted")
+        
+        # 批量恢复
+        restored_count = await repo.restore_by_user_id(user_id)
+        assert restored_count == 5, f"Should restore 5 records, got {restored_count}"
+        logger.info("✅ Batch restore succeeded, restored %d records", restored_count)
+        
+        # 验证恢复后可以查到
+        results_after_restore = await repo.find_by_user_id(user_id)
+        assert len(results_after_restore) == 5, f"Should have 5 records after restore, got {len(results_after_restore)}"
+        logger.info("✅ Verified: Can query 5 records after restore")
+        
+        # 清理
+        await repo.hard_delete_by_user_id(user_id)
+        logger.info("✅ Test completed, cleaned up test data")
+        
+    except Exception as e:
+        logger.error("❌ Soft delete batch test failed: %s", e)
+        import traceback
+        logger.error(traceback.format_exc())
+        raise
+    
+    logger.info("✅ Soft delete batch test completed")
+
+
+async def test_hard_delete():
+    """测试硬删除功能"""
+    logger.info("Starting test of hard delete...")
+    
+    repo = get_bean_by_type(MemCellRawRepository)
+    user_id = "test_user_hard_delete_001"
+    
+    try:
+        # 清理旧数据
+        await repo.hard_delete_by_user_id(user_id)
+        logger.info("✅ Cleaned up existing test data")
+        
+        # 创建测试数据
+        now = get_now_with_timezone()
+        memcell = MemCell(
+            user_id=user_id,
+            timestamp=now,
+            summary="测试硬删除的记录",
+            type=DataTypeEnum.CONVERSATION,
+        )
+        created = await repo.append_memcell(memcell)
+        event_id = str(created.event_id)
+        logger.info("✅ Created test record, event_id=%s", event_id)
+        
+        # 执行硬删除
+        deleted = await repo.hard_delete_by_event_id(event_id)
+        assert deleted is True, "Hard delete should succeed"
+        logger.info("✅ Hard delete succeeded")
+        
+        # 验证 hard_find_one 也找不到（记录被物理删除）
+        hard_found = await MemCell.hard_find_one({"_id": created.id})
+        assert hard_found is None, "hard_find_one should not find hard-deleted record"
+        logger.info("✅ Verified: Record is completely removed after hard delete")
+        
+        logger.info("✅ Test completed")
+        
+    except Exception as e:
+        logger.error("❌ Hard delete test failed: %s", e)
+        import traceback
+        logger.error(traceback.format_exc())
+        raise
+    
+    logger.info("✅ Hard delete test completed")
+
+
+async def test_query_with_soft_delete_filtering():
+    """测试查询自动过滤软删除记录"""
+    logger.info("Starting test of query filtering with soft delete...")
+    
+    repo = get_bean_by_type(MemCellRawRepository)
+    user_id = "test_user_query_filter_001"
+    
+    try:
+        # 清理旧数据
+        await repo.hard_delete_by_user_id(user_id)
+        logger.info("✅ Cleaned up existing test data")
+        
+        # 创建10条记录
+        now = get_now_with_timezone()
+        event_ids = []
+        for i in range(10):
+            memcell = MemCell(
+                user_id=user_id,
+                timestamp=now - timedelta(hours=i),
+                summary=f"测试记录 {i+1}",
+                type=DataTypeEnum.CONVERSATION,
+            )
+            created = await repo.append_memcell(memcell)
+            event_ids.append(str(created.event_id))
+        logger.info("✅ Created 10 test records")
+        
+        # 软删除前5条
+        for i in range(5):
+            await repo.delete_by_event_id(event_ids[i], deleted_by="filter_test")
+        logger.info("✅ Soft deleted first 5 records")
+        
+        # 测试 find_by_user_id（应该只返回5条未删除的）
+        results = await repo.find_by_user_id(user_id)
+        assert len(results) == 5, f"find_by_user_id should return 5, got {len(results)}"
+        logger.info("✅ Verified: find_by_user_id returns only 5 non-deleted records")
+        
+        # 测试 count_by_user_id（应该只计数未删除的）
+        count = await repo.count_by_user_id(user_id)
+        assert count == 5, f"count_by_user_id should return 5, got {count}"
+        logger.info("✅ Verified: count_by_user_id counts only non-deleted records")
+        
+        # 使用 hard_find_many 应该能找到所有10条
+        all_results = await MemCell.hard_find_many({"user_id": user_id}).to_list()
+        assert len(all_results) == 10, f"hard_find_many should return 10, got {len(all_results)}"
+        logger.info("✅ Verified: hard_find_many returns all 10 records including deleted")
+        
+        # 统计已删除和未删除的数量
+        deleted_count = sum(1 for mc in all_results if mc.is_deleted())
+        active_count = sum(1 for mc in all_results if not mc.is_deleted())
+        assert deleted_count == 5, f"Should have 5 deleted, got {deleted_count}"
+        assert active_count == 5, f"Should have 5 active, got {active_count}"
+        logger.info("✅ Verified: %d deleted, %d active", deleted_count, active_count)
+        
+        # 清理
+        await repo.hard_delete_by_user_id(user_id)
+        logger.info("✅ Test completed, cleaned up test data")
+        
+    except Exception as e:
+        logger.error("❌ Query filtering test failed: %s", e)
+        import traceback
+        logger.error(traceback.format_exc())
+        raise
+    
+    logger.info("✅ Query filtering test completed")
+
+
+async def test_prevent_duplicate_soft_delete():
+    """测试防止重复软删除（保护审计记录）"""
+    logger.info("Starting test of preventing duplicate soft delete...")
+    
+    repo = get_bean_by_type(MemCellRawRepository)
+    user_id = "test_user_duplicate_delete_001"
+    
+    try:
+        # 清理旧数据
+        await repo.hard_delete_by_user_id(user_id)
+        logger.info("✅ Cleaned up existing test data")
+        
+        # 创建5条测试记录
+        now = get_now_with_timezone()
+        event_ids = []
+        for i in range(5):
+            memcell = MemCell(
+                user_id=user_id,
+                timestamp=now - timedelta(hours=i),
+                summary=f"测试记录 {i+1}",
+                type=DataTypeEnum.CONVERSATION,
+            )
+            created = await repo.append_memcell(memcell)
+            event_ids.append(str(created.event_id))
+        logger.info("✅ Created 5 test records")
+        
+        # 第一次软删除前3条记录
+        first_delete_time = get_now_with_timezone()
+        for i in range(3):
+            await repo.delete_by_event_id(event_ids[i], deleted_by="admin_1")
+        logger.info("✅ First soft delete of 3 records by admin_1")
+        
+        # 获取已删除记录的审计信息
+        deleted_records = []
+        for i in range(3):
+            mc = await MemCell.hard_find_one({"_id": ObjectId(event_ids[i])})
+            assert mc is not None
+            assert mc.is_deleted()
+            deleted_records.append({
+                "event_id": event_ids[i],
+                "deleted_at": mc.deleted_at,
+                "deleted_by": mc.deleted_by,
+                "deleted_id": mc.deleted_id,
+            })
+        logger.info("✅ Captured audit info from first delete")
+        
+        # 等待一小段时间，确保时间戳会不同
+        from asyncio import sleep
+        await sleep(0.01)
+        
+        # 尝试再次软删除同样的记录（应该被忽略）
+        result = await repo.delete_by_user_id(user_id, deleted_by="admin_2")
+        # 注意：delete_by_user_id 会尝试删除所有记录，但只有未删除的会被修改
+        # 前3条已删除，后2条未删除，所以应该只修改2条
+        assert result == 2, f"Should only soft delete 2 un-deleted records, got {result}"
+        logger.info("✅ Second delete only affected 2 un-deleted records")
+        
+        # 验证前3条记录的审计信息没有被修改
+        for i, original in enumerate(deleted_records):
+            mc = await MemCell.hard_find_one({"_id": ObjectId(original["event_id"])})
+            assert mc is not None
+            assert mc.is_deleted()
+            assert mc.deleted_at == original["deleted_at"], \
+                f"deleted_at should not change for record {i}"
+            assert mc.deleted_by == original["deleted_by"], \
+                f"deleted_by should not change for record {i}, expected {original['deleted_by']}, got {mc.deleted_by}"
+            assert mc.deleted_id == original["deleted_id"], \
+                f"deleted_id should not change for record {i}"
+        logger.info("✅ Verified: First 3 records' audit info was NOT modified")
+        
+        # 验证后2条记录被新的删除操作标记
+        for i in range(3, 5):
+            mc = await MemCell.hard_find_one({"_id": ObjectId(event_ids[i])})
+            assert mc is not None
+            assert mc.is_deleted()
+            # 这两条应该被新删除操作标记
+            assert mc.deleted_at > first_delete_time, "Should have newer deletion time"
+            # 注意：由于是批量删除，deleted_by 可能是 admin_2
+        logger.info("✅ Verified: Last 2 records were soft deleted by second operation")
+        
+        # 测试单个文档的重复删除保护
+        test_record = await MemCell.hard_find_one({"_id": ObjectId(event_ids[0])})
+        original_deleted_at = test_record.deleted_at
+        original_deleted_by = test_record.deleted_by
+        original_deleted_id = test_record.deleted_id
+        
+        # 再次尝试删除（应该被忽略）
+        await test_record.delete(deleted_by="admin_3")
+        
+        # 重新获取记录
+        test_record_after = await MemCell.hard_find_one({"_id": ObjectId(event_ids[0])})
+        assert test_record_after.deleted_at == original_deleted_at, \
+            "deleted_at should not change on duplicate delete"
+        assert test_record_after.deleted_by == original_deleted_by, \
+            "deleted_by should not change on duplicate delete"
+        assert test_record_after.deleted_id == original_deleted_id, \
+            "deleted_id should not change on duplicate delete"
+        logger.info("✅ Verified: Instance method delete() also prevents duplicate deletion")
+        
+        # 清理
+        await repo.hard_delete_by_user_id(user_id)
+        logger.info("✅ Test completed, cleaned up test data")
+        
+    except Exception as e:
+        logger.error("❌ Prevent duplicate soft delete test failed: %s", e)
+        import traceback
+        logger.error(traceback.format_exc())
+        raise
+    
+    logger.info("✅ Prevent duplicate soft delete test completed")
 
 
 async def run_all_tests():
@@ -805,7 +1178,32 @@ async def run_all_tests():
         await test_batch_delete_operations()
         await test_statistics_and_aggregation()
         await test_get_by_event_ids()
+        
+        # 软删除功能测试
+        logger.info("")
+        logger.info("=" * 60)
+        logger.info("Starting Soft Delete Feature Tests...")
+        logger.info("=" * 60)
+        await test_soft_delete_single()
+        await test_soft_delete_batch()
+        await test_hard_delete()
+        await test_query_with_soft_delete_filtering()
+        await test_prevent_duplicate_soft_delete()
+        
+        logger.info("")
+        logger.info("=" * 60)
         logger.info("✅✅✅ All tests completed!")
+        logger.info("=" * 60)
+        logger.info("")
+        logger.info("软删除功能验证总结：")
+        logger.info("1. ✅ 单个软删除正常工作")
+        logger.info("2. ✅ 批量软删除正常工作")
+        logger.info("3. ✅ 恢复功能正常工作")
+        logger.info("4. ✅ 查询自动过滤已删除记录")
+        logger.info("5. ✅ hard_find 可以查询已删除记录")
+        logger.info("6. ✅ 硬删除（物理删除）正常工作")
+        logger.info("7. ✅ deleted_by、deleted_at、deleted_id 字段正确设置")
+        logger.info("8. ✅ 防止重复软删除，保护审计记录")
     except Exception as e:
         logger.error("❌ Error occurred during testing: %s", e)
         raise

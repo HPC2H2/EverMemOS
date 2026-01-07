@@ -10,7 +10,7 @@ import pprint
 from typing import List, Optional, Dict, Any
 from elasticsearch.dsl import Q
 from core.oxm.es.base_repository import BaseRepository
-from core.oxm.constants import QUERY_ALL
+from core.oxm.constants import MAGIC_ALL
 from infra_layer.adapters.out.search.elasticsearch.memory.foresight import ForesightDoc
 from core.observation.logger import get_logger
 from common_utils.datetime_utils import get_now_with_timezone
@@ -222,8 +222,8 @@ class ForesightEsRepository(BaseRepository[ForesightDoc]):
             # Build filter conditions
             filter_queries = []
 
-            # Handle user_id filter: QUERY_ALL means no filter
-            if user_id != QUERY_ALL:
+            # Handle user_id filter: MAGIC_ALL means no filter
+            if user_id != MAGIC_ALL:
                 if user_id and user_id != "":
                     filter_queries.append(Q("term", user_id=user_id))
                 elif user_id is None or user_id == "":
@@ -232,8 +232,8 @@ class ForesightEsRepository(BaseRepository[ForesightDoc]):
                         Q("bool", must_not=Q("exists", field="user_id"))
                     )
 
-            # Handle group_id filter: QUERY_ALL means no filter
-            if group_id != QUERY_ALL:
+            # Handle group_id filter: MAGIC_ALL means no filter
+            if group_id != MAGIC_ALL:
                 if group_id and group_id != "":
                     filter_queries.append(Q("term", group_id=group_id))
                 elif group_id is None or group_id == "":

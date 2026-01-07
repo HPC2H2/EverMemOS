@@ -13,6 +13,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from api_specs.memory_types import BaseMemory, MemoryType, MemCell
+from common_utils.datetime_utils import get_now_with_timezone
 from memory_layer.memory_extractor.base_memory_extractor import MemoryExtractRequest
 
 
@@ -98,7 +99,7 @@ class ProfileMemoryLife(BaseMemory):
     def __post_init__(self) -> None:
         self.memory_type = MemoryType.PROFILE
         if self.last_updated is None:
-            self.last_updated = datetime.now()
+            self.last_updated = get_now_with_timezone()
 
     def to_dict(self) -> Dict[str, Any]:
         base_dict = super().to_dict()
@@ -133,7 +134,7 @@ class ProfileMemoryLife(BaseMemory):
             memory_type=MemoryType.PROFILE,
             user_id=user_id or data.get("user_id", ""),
             group_id=group_id or data.get("group_id", ""),
-            timestamp=datetime.now(),
+            timestamp=get_now_with_timezone(),
             ori_event_id_list=data.get("ori_event_id_list", []),
             explicit_info=explicit_list,
             implicit_traits=implicit_list,

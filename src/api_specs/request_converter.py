@@ -15,7 +15,7 @@ from api_specs.dtos.memory_query import RetrieveMemRequest, FetchMemRequest
 from api_specs.dtos.memory_command import MemorizeRequest
 from api_specs.memory_types import RawDataType
 from api_specs.dtos.memory_command import RawData
-from core.oxm.constants import QUERY_ALL
+from core.oxm.constants import MAGIC_ALL
 
 from typing import Dict, Any, Optional
 from common_utils.datetime_utils import from_iso_format
@@ -65,11 +65,11 @@ def convert_dict_to_fetch_mem_request(data: Dict[str, Any]) -> FetchMemRequest:
         # Build FetchMemRequest object
         return FetchMemRequest(
             user_id=data.get(
-                "user_id", QUERY_ALL
-            ),  # User ID, use QUERY_ALL to skip user filtering
+                "user_id", MAGIC_ALL
+            ),  # User ID, use MAGIC_ALL to skip user filtering
             group_id=data.get(
-                "group_id", QUERY_ALL
-            ),  # Group ID, use QUERY_ALL to skip group filtering
+                "group_id", MAGIC_ALL
+            ),  # Group ID, use MAGIC_ALL to skip group filtering
             memory_type=memory_type,
             limit=limit,
             offset=offset,
@@ -157,11 +157,11 @@ def convert_dict_to_retrieve_mem_request(
         return RetrieveMemRequest(
             retrieve_method=retrieve_method,
             user_id=data.get(
-                "user_id", QUERY_ALL
-            ),  # User ID, use QUERY_ALL to skip user filtering
+                "user_id", MAGIC_ALL
+            ),  # User ID, use MAGIC_ALL to skip user filtering
             group_id=data.get(
-                "group_id", QUERY_ALL
-            ),  # Group ID, use QUERY_ALL to skip group filtering
+                "group_id", MAGIC_ALL
+            ),  # Group ID, use MAGIC_ALL to skip group filtering
             query=query or data.get("query", None),
             memory_types=memory_types,
             top_k=top_k,
