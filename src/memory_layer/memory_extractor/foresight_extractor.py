@@ -275,7 +275,8 @@ class ForesightExtractor(MemoryExtractor):
                             'start_time': item_start_time,
                             'end_time': item_end_time,
                             'duration_days': item_duration_days,
-                            'parent_episode_id': item.get('parent_episode_id'),
+                            'parent_type': item.get('parent_type', 'memcell'),
+                            'parent_id': item.get('parent_id'),
                         }
                     )
 
@@ -306,7 +307,8 @@ class ForesightExtractor(MemoryExtractor):
                         start_time=item_data['start_time'],
                         end_time=item_data['end_time'],
                         duration_days=item_data['duration_days'],
-                        parent_episode_id=item_data['parent_episode_id'],
+                        parent_type=item_data['parent_type'],
+                        parent_id=item_data['parent_id'],
                         vector=vector,
                         vector_model=vs.get_model_name(),
                     )

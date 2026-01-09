@@ -54,10 +54,11 @@ class ForesightRecordRawRepository(BaseRepository[ForesightRecord]):
         try:
             await foresight.insert(session=session)
             logger.info(
-                "✅ Saved personal foresight successfully: id=%s, user_id=%s, parent_episode=%s",
+                "✅ Saved personal foresight successfully: id=%s, user_id=%s, parent_type=%s, parent_id=%s",
                 foresight.id,
                 foresight.user_id,
-                foresight.parent_episode_id,
+                foresight.parent_type,
+                foresight.parent_id,
             )
             return foresight
         except Exception as e:
@@ -108,9 +109,9 @@ class ForesightRecordRawRepository(BaseRepository[ForesightRecord]):
             logger.error("❌ Failed to retrieve personal foresight by ID: %s", e)
             return None
 
-    async def get_by_parent_episode_id(
+    async def get_by_parent_id(
         self,
-        parent_episode_id: str,
+        parent_id: str,
         session: Optional[AsyncClientSession] = None,
         model: Optional[Type[T]] = None,
     ) -> List[Union[ForesightRecord, ForesightRecordProjection]]:
@@ -118,7 +119,7 @@ class ForesightRecordRawRepository(BaseRepository[ForesightRecord]):
         Retrieve all foresights by parent episodic memory ID
 
         Args:
-            parent_episode_id: Parent episodic memory ID
+            parent_id: Parent memory ID
             session: Optional MongoDB session for transaction support
             model: Type of model to return, defaults to ForesightRecord (full version)
 
@@ -131,20 +132,18 @@ class ForesightRecordRawRepository(BaseRepository[ForesightRecord]):
 
             # Determine whether to use projection based on model type
             if target_model == self.model:
-                query = self.model.find(
-                    {"parent_episode_id": parent_episode_id}, session=session
-                )
+                query = self.model.find({"parent_id": parent_id}, session=session)
             else:
                 query = self.model.find(
-                    {"parent_episode_id": parent_episode_id},
+                    {"parent_id": parent_id},
                     projection_model=target_model,
                     session=session,
                 )
 
             results = await query.to_list()
             logger.debug(
-                "✅ Retrieved foresights by parent episodic memory ID successfully: %s, found %d records (model=%s)",
-                parent_episode_id,
+                "✅ Retrieved foresights by parent memory ID successfully: %s, found %d records (model=%s)",
+                parent_id,
                 len(results),
                 target_model.__name__,
             )
@@ -291,14 +290,14 @@ class ForesightRecordRawRepository(BaseRepository[ForesightRecord]):
             logger.error("❌ Failed to delete personal foresight: %s", e)
             return False
 
-    async def delete_by_parent_episode_id(
-        self, parent_episode_id: str, session: Optional[AsyncClientSession] = None
+    async def delete_by_parent_id(
+        self, parent_id: str, session: Optional[AsyncClientSession] = None
     ) -> int:
         """
         Delete all foresights by parent episodic memory ID
 
         Args:
-            parent_episode_id: Parent episodic memory ID
+            parent_id: Parent memory ID
             session: Optional MongoDB session for transaction support
 
         Returns:
@@ -306,12 +305,12 @@ class ForesightRecordRawRepository(BaseRepository[ForesightRecord]):
         """
         try:
             result = await self.model.find(
-                {"parent_episode_id": parent_episode_id}, session=session
+                {"parent_id": parent_id}, session=session
             ).delete()
             count = result.deleted_count if result else 0
             logger.info(
-                "✅ Deleted foresights by parent episodic memory ID successfully: %s, deleted %d records",
-                parent_episode_id,
+                "✅ Deleted foresights by parent memory ID successfully: %s, deleted %d records",
+                parent_id,
                 count,
             )
             return count

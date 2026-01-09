@@ -53,10 +53,11 @@ class EventLogRecordRawRepository(BaseRepository[EventLogRecord]):
         try:
             await event_log.insert(session=session)
             logger.info(
-                "✅ Saved personal event log successfully: id=%s, user_id=%s, parent_episode=%s",
+                "✅ Saved personal event log successfully: id=%s, user_id=%s, parent_type=%s, parent_id=%s",
                 event_log.id,
                 event_log.user_id,
-                event_log.parent_episode_id,
+                event_log.parent_type,
+                event_log.parent_id,
             )
             return event_log
         except Exception as e:
@@ -107,9 +108,9 @@ class EventLogRecordRawRepository(BaseRepository[EventLogRecord]):
             logger.error("❌ Failed to retrieve personal event log by ID: %s", e)
             return None
 
-    async def get_by_parent_episode_id(
+    async def get_by_parent_id(
         self,
-        parent_episode_id: str,
+        parent_id: str,
         session: Optional[AsyncClientSession] = None,
         model: Optional[Type[T]] = None,
     ) -> List[Union[EventLogRecord, EventLogRecordProjection]]:
@@ -117,7 +118,7 @@ class EventLogRecordRawRepository(BaseRepository[EventLogRecord]):
         Get all event logs by parent episodic memory ID
 
         Args:
-            parent_episode_id: Parent episodic memory ID
+            parent_id: Parent memory ID
             session: Optional MongoDB session, for transaction support
             model: Returned model type, default is EventLogRecord (full version), can pass EventLogRecordShort
 
@@ -130,20 +131,18 @@ class EventLogRecordRawRepository(BaseRepository[EventLogRecord]):
 
             # Determine whether to use projection based on model type
             if target_model == self.model:
-                query = self.model.find(
-                    {"parent_episode_id": parent_episode_id}, session=session
-                )
+                query = self.model.find({"parent_id": parent_id}, session=session)
             else:
                 query = self.model.find(
-                    {"parent_episode_id": parent_episode_id},
+                    {"parent_id": parent_id},
                     projection_model=target_model,
                     session=session,
                 )
 
             results = await query.to_list()
             logger.debug(
-                "✅ Retrieved event logs by parent episodic memory ID successfully: %s, found %d records (model=%s)",
-                parent_episode_id,
+                "✅ Retrieved event logs by parent memory ID successfully: %s, found %d records (model=%s)",
+                parent_id,
                 len(results),
                 target_model.__name__,
             )
@@ -281,14 +280,14 @@ class EventLogRecordRawRepository(BaseRepository[EventLogRecord]):
             logger.error("❌ Failed to delete personal event log: %s", e)
             return False
 
-    async def delete_by_parent_episode_id(
-        self, parent_episode_id: str, session: Optional[AsyncClientSession] = None
+    async def delete_by_parent_id(
+        self, parent_id: str, session: Optional[AsyncClientSession] = None
     ) -> int:
         """
         Delete all event logs by parent episodic memory ID
 
         Args:
-            parent_episode_id: Parent episodic memory ID
+            parent_id: Parent memory ID
             session: Optional MongoDB session, for transaction support
 
         Returns:
@@ -296,12 +295,12 @@ class EventLogRecordRawRepository(BaseRepository[EventLogRecord]):
         """
         try:
             result = await self.model.find(
-                {"parent_episode_id": parent_episode_id}, session=session
+                {"parent_id": parent_id}, session=session
             ).delete()
             count = result.deleted_count if result else 0
             logger.info(
-                "✅ Deleted event logs by parent episodic memory ID successfully: %s, deleted %d records",
-                parent_episode_id,
+                "✅ Deleted event logs by parent memory ID successfully: %s, deleted %d records",
+                parent_id,
                 count,
             )
             return count

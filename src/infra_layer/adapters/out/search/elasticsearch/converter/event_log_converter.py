@@ -72,14 +72,11 @@ class EventLogConverter(BaseEsConverter[EventLogDoc]):
                 linked_entities=None,
                 # MongoDB specific fields
                 subject=source_doc.atomic_fact[:50] if source_doc.atomic_fact else "",
-                memcell_event_id_list=(
-                    [source_doc.parent_episode_id]
-                    if source_doc.parent_episode_id
-                    else None
-                ),
+                memcell_event_id_list=[source_doc.parent_id],
                 # Extension fields
                 extend={
-                    "parent_episode_id": source_doc.parent_episode_id,
+                    "parent_type": source_doc.parent_type,
+                    "parent_id": source_doc.parent_id,
                     "event_type": source_doc.event_type
                     or RawDataType.CONVERSATION.value,
                     "vector_model": source_doc.vector_model,

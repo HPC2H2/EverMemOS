@@ -86,8 +86,9 @@ class EventLogEsRepository(BaseRepository[EventLogDoc]):
         timestamp: datetime,
         atomic_fact: str,
         search_content: List[str],
+        parent_id: str,
+        parent_type: str,
         event_type: Optional[str] = None,
-        parent_episode_id: Optional[str] = None,
         group_id: Optional[str] = None,
         group_name: str = "",
         user_name: str = "",
@@ -105,7 +106,8 @@ class EventLogEsRepository(BaseRepository[EventLogDoc]):
             timestamp: Event occurrence time (required)
             atomic_fact: Atomic fact (required)
             search_content: List of search content (supports multiple search terms, required)
-            parent_episode_id: Parent episode memory ID
+            parent_id: Parent memory ID
+            parent_type: Parent memory type (memcell/episode)
             group_id: Group ID
             participants: List of participants
             extend: Extension fields
@@ -126,7 +128,11 @@ class EventLogEsRepository(BaseRepository[EventLogDoc]):
             # Build extend field, including event log specific information
             eventlog_extend = extend or {}
             eventlog_extend.update(
-                {"parent_episode_id": parent_episode_id, "atomic_fact": atomic_fact}
+                {
+                    "parent_type": parent_type,
+                    "parent_id": parent_id,
+                    "atomic_fact": atomic_fact,
+                }
             )
 
             # Create document instance

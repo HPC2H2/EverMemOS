@@ -668,6 +668,7 @@ async def _extract_foresights(
     for mem in result:
         mem.group_id = state.request.group_id
         mem.group_name = state.request.group_name
+        mem.parent_id = state.memcell.event_id  # Set parent_id to memcell's event_id
     return result
 
 
@@ -682,6 +683,7 @@ async def _extract_event_logs(
         return []
     result.group_id = state.request.group_id
     result.group_name = state.request.group_name
+    result.parent_id = state.memcell.event_id  # Set parent_id to memcell's event_id
     return [result]
 
 

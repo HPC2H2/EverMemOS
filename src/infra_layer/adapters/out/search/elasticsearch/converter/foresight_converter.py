@@ -81,14 +81,11 @@ class ForesightConverter(BaseEsConverter[ForesightDoc]):
                 linked_entities=None,
                 # MongoDB specific fields
                 subject=source_doc.content[:100] if source_doc.content else "",
-                memcell_event_id_list=(
-                    [source_doc.parent_episode_id]
-                    if source_doc.parent_episode_id
-                    else None
-                ),
+                memcell_event_id_list=[source_doc.parent_id],
                 # Extension fields
                 extend={
-                    "parent_episode_id": source_doc.parent_episode_id,
+                    "parent_type": source_doc.parent_type,
+                    "parent_id": source_doc.parent_id,
                     "start_time": source_doc.start_time,
                     "end_time": source_doc.end_time,
                     "duration_days": source_doc.duration_days,
