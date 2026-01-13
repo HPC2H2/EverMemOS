@@ -200,8 +200,6 @@ class MemoryManager:
                 raise ValueError("retrieve_mem_request is required for retrieve_mem")
 
             # Dispatch based on retrieve_method
-            from api_specs.memory_models import RetrieveMethod
-
             retrieve_method = retrieve_mem_request.retrieve_method
 
             logger.info(
@@ -308,14 +306,14 @@ class MemoryManager:
 
         try:
             hits = await self.get_keyword_search_results(
-                retrieve_mem_request, retrieve_method='keyword_search'
+                retrieve_mem_request, retrieve_method=RetrieveMethod.KEYWORD.value
             )
             duration = time.perf_counter() - start_time
             status = 'success' if hits else 'empty_result'
 
             record_retrieve_request(
                 memory_type=memory_type,
-                retrieve_method='keyword_search',
+                retrieve_method=RetrieveMethod.KEYWORD.value,
                 status=status,
                 duration_seconds=duration,
                 results_count=len(hits),
@@ -326,7 +324,7 @@ class MemoryManager:
             duration = time.perf_counter() - start_time
             record_retrieve_request(
                 memory_type=memory_type,
-                retrieve_method='keyword_search',
+                retrieve_method=RetrieveMethod.KEYWORD.value,
                 status='error',
                 duration_seconds=duration,
                 results_count=0,
@@ -337,7 +335,7 @@ class MemoryManager:
     async def get_keyword_search_results(
         self,
         retrieve_mem_request: 'RetrieveMemRequest',
-        retrieve_method: str = 'keyword_search',
+        retrieve_method: str = RetrieveMethod.KEYWORD.value,
     ) -> List[Dict[str, Any]]:
         """Keyword search with stage-level metrics"""
         stage_start = time.perf_counter()
@@ -407,7 +405,7 @@ class MemoryManager:
             # Record stage metrics
             record_retrieve_stage(
                 retrieve_method=retrieve_method,
-                stage='keyword_search',
+                stage=RetrieveMethod.KEYWORD.value,
                 memory_type=memory_type,
                 duration_seconds=time.perf_counter() - stage_start,
             )
@@ -416,13 +414,13 @@ class MemoryManager:
         except Exception as e:
             record_retrieve_stage(
                 retrieve_method=retrieve_method,
-                stage='keyword_search',
+                stage=RetrieveMethod.KEYWORD.value,
                 memory_type=memory_type,
                 duration_seconds=time.perf_counter() - stage_start,
             )
             record_retrieve_error(
                 retrieve_method=retrieve_method,
-                stage='keyword_search',
+                stage=RetrieveMethod.KEYWORD.value,
                 error_type=self._classify_retrieve_error(e),
             )
             logger.error(f"Error in get_keyword_search_results: {e}")
@@ -443,14 +441,14 @@ class MemoryManager:
 
         try:
             hits = await self.get_vector_search_results(
-                retrieve_mem_request, retrieve_method='vector_search'
+                retrieve_mem_request, retrieve_method=RetrieveMethod.VECTOR.value
             )
             duration = time.perf_counter() - start_time
             status = 'success' if hits else 'empty_result'
 
             record_retrieve_request(
                 memory_type=memory_type,
-                retrieve_method='vector_search',
+                retrieve_method=RetrieveMethod.VECTOR.value,
                 status=status,
                 duration_seconds=duration,
                 results_count=len(hits),
@@ -461,7 +459,7 @@ class MemoryManager:
             duration = time.perf_counter() - start_time
             record_retrieve_request(
                 memory_type=memory_type,
-                retrieve_method='vector_search',
+                retrieve_method=RetrieveMethod.VECTOR.value,
                 status='error',
                 duration_seconds=duration,
                 results_count=0,
@@ -472,7 +470,7 @@ class MemoryManager:
     async def get_vector_search_results(
         self,
         retrieve_mem_request: 'RetrieveMemRequest',
-        retrieve_method: str = 'vector_search',
+        retrieve_method: str = RetrieveMethod.VECTOR.value,
     ) -> List[Dict[str, Any]]:
         """Vector search with stage-level metrics (embedding + milvus_search)"""
         memory_type = (
@@ -607,13 +605,13 @@ class MemoryManager:
         except Exception as e:
             record_retrieve_stage(
                 retrieve_method=retrieve_method,
-                stage='vector_search',
+                stage=RetrieveMethod.VECTOR.value,
                 memory_type=memory_type,
                 duration_seconds=time.perf_counter() - milvus_start,
             )
             record_retrieve_error(
                 retrieve_method=retrieve_method,
-                stage='vector_search',
+                stage=RetrieveMethod.VECTOR.value,
                 error_type=self._classify_retrieve_error(e),
             )
             logger.error(f"Error in get_vector_search_results: {e}")
@@ -634,14 +632,14 @@ class MemoryManager:
 
         try:
             hits = await self._search_hybrid(
-                retrieve_mem_request, retrieve_method='hybrid'
+                retrieve_mem_request, retrieve_method=RetrieveMethod.HYBRID.value
             )
             duration = time.perf_counter() - start_time
             status = 'success' if hits else 'empty_result'
 
             record_retrieve_request(
                 memory_type=memory_type,
-                retrieve_method='hybrid',
+                retrieve_method=RetrieveMethod.HYBRID.value,
                 status=status,
                 duration_seconds=duration,
                 results_count=len(hits),
@@ -652,7 +650,7 @@ class MemoryManager:
             duration = time.perf_counter() - start_time
             record_retrieve_request(
                 memory_type=memory_type,
-                retrieve_method='hybrid',
+                retrieve_method=RetrieveMethod.HYBRID.value,
                 status='error',
                 duration_seconds=duration,
                 results_count=0,
@@ -668,7 +666,7 @@ class MemoryManager:
         hits: List[Dict],
         top_k: int,
         memory_type: str = 'unknown',
-        retrieve_method: str = 'hybrid',
+        retrieve_method: str = RetrieveMethod.HYBRID.value,
     ) -> List[Dict]:
         """Rerank hits using rerank service with stage metrics"""
         if not hits:
@@ -693,7 +691,9 @@ class MemoryManager:
             raise
 
     async def _search_hybrid(
-        self, request: 'RetrieveMemRequest', retrieve_method: str = 'hybrid'
+        self,
+        request: 'RetrieveMemRequest',
+        retrieve_method: str = RetrieveMethod.HYBRID.value,
     ) -> List[Dict]:
         """Core hybrid search: keyword + vector + rerank, returns flat list"""
         memory_type = (
@@ -716,7 +716,9 @@ class MemoryManager:
         )
 
     async def _search_rrf(
-        self, request: 'RetrieveMemRequest', retrieve_method: str = 'rrf'
+        self,
+        request: 'RetrieveMemRequest',
+        retrieve_method: str = RetrieveMethod.RRF.value,
     ) -> List[Dict]:
         """Core RRF search: keyword + vector + RRF fusion, returns flat list"""
         memory_type = (
@@ -813,13 +815,15 @@ class MemoryManager:
         )
 
         try:
-            hits = await self._search_rrf(retrieve_mem_request, retrieve_method='rrf')
+            hits = await self._search_rrf(
+                retrieve_mem_request, retrieve_method=RetrieveMethod.RRF.value
+            )
             duration = time.perf_counter() - start_time
             status = 'success' if hits else 'empty_result'
 
             record_retrieve_request(
                 memory_type=memory_type,
-                retrieve_method='rrf',
+                retrieve_method=RetrieveMethod.RRF.value,
                 status=status,
                 duration_seconds=duration,
                 results_count=len(hits),
@@ -830,7 +834,7 @@ class MemoryManager:
             duration = time.perf_counter() - start_time
             record_retrieve_request(
                 memory_type=memory_type,
-                retrieve_method='rrf',
+                retrieve_method=RetrieveMethod.RRF.value,
                 status='error',
                 duration_seconds=duration,
                 results_count=0,
@@ -880,7 +884,7 @@ class MemoryManager:
                 duration = time.perf_counter() - start_time
                 record_retrieve_request(
                     memory_type=memory_type,
-                    retrieve_method='agentic',
+                    retrieve_method=RetrieveMethod.AGENTIC.value,
                     status='empty_result',
                     duration_seconds=duration,
                     results_count=0,
@@ -908,7 +912,7 @@ class MemoryManager:
                 duration = time.perf_counter() - start_time
                 record_retrieve_request(
                     memory_type=memory_type,
-                    retrieve_method='agentic',
+                    retrieve_method=RetrieveMethod.AGENTIC.value,
                     status='success',
                     duration_seconds=duration,
                     results_count=len(round1[:top_k]),
@@ -960,7 +964,7 @@ class MemoryManager:
             duration = time.perf_counter() - start_time
             record_retrieve_request(
                 memory_type=memory_type,
-                retrieve_method='agentic',
+                retrieve_method=RetrieveMethod.AGENTIC.value,
                 status='success',
                 duration_seconds=duration,
                 results_count=len(final[:top_k]),
@@ -972,7 +976,7 @@ class MemoryManager:
             duration = time.perf_counter() - start_time
             record_retrieve_request(
                 memory_type=memory_type,
-                retrieve_method='agentic',
+                retrieve_method=RetrieveMethod.AGENTIC.value,
                 status='error',
                 duration_seconds=duration,
                 results_count=0,

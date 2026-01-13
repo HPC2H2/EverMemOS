@@ -322,18 +322,23 @@ class EventLogMilvusRepository(BaseMilvusRepository[EventLogCollection]):
             )
             return False
 
-    async def delete_by_parent_id(self, parent_id: str) -> int:
+    async def delete_by_parent_id(
+        self, parent_id: str, parent_type: Optional[str] = None
+    ) -> int:
         """
-        Delete all associated event logs by parent memory ID
+        Delete all associated event logs by parent memory ID and optionally parent type
 
         Args:
             parent_id: Parent memory ID
+            parent_type: Optional parent type filter (e.g., "memcell", "episode")
 
         Returns:
             Number of deleted documents
         """
         try:
             expr = f'parent_id == "{parent_id}"'
+            if parent_type is not None:
+                expr += f' and parent_type == "{parent_type}"'
 
             # First query the number of documents to delete
             results = await self.collection.query(expr=expr, output_fields=["id"])
@@ -344,7 +349,9 @@ class EventLogMilvusRepository(BaseMilvusRepository[EventLogCollection]):
                 await self.collection.delete(expr)
 
             logger.debug(
-                "✅ Successfully deleted event logs by parent_id: deleted %d records",
+                "✅ Successfully deleted event logs by parent_id: %s (type=%s), deleted %d records",
+                parent_id,
+                parent_type,
                 delete_count,
             )
             return delete_count

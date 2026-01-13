@@ -336,18 +336,23 @@ class ForesightMilvusRepository(BaseMilvusRepository[ForesightCollection]):
             )
             return False
 
-    async def delete_by_parent_id(self, parent_id: str) -> int:
+    async def delete_by_parent_id(
+        self, parent_id: str, parent_type: Optional[str] = None
+    ) -> int:
         """
-        Delete all associated foresights by parent memory ID
+        Delete all associated foresights by parent memory ID and optionally parent type
 
         Args:
             parent_id: Parent memory ID
+            parent_type: Optional parent type filter (e.g., "memcell", "episode")
 
         Returns:
             Number of deleted documents
         """
         try:
             expr = f'parent_id == "{parent_id}"'
+            if parent_type is not None:
+                expr += f' and parent_type == "{parent_type}"'
 
             # First query the number of documents to delete
             results = await self.collection.query(expr=expr, output_fields=["id"])
@@ -358,7 +363,9 @@ class ForesightMilvusRepository(BaseMilvusRepository[ForesightCollection]):
                 await self.collection.delete(expr)
 
             logger.debug(
-                "✅ Deleted foresight by parent_id successfully: deleted %d records",
+                "✅ Deleted foresight by parent_id successfully: %s (type=%s), deleted %d records",
+                parent_id,
+                parent_type,
                 delete_count,
             )
             return delete_count

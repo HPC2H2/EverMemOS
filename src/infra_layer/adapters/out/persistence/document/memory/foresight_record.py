@@ -107,10 +107,10 @@ class ForesightRecord(DocumentBase, AuditBase):
             IndexModel([("group_id", ASCENDING)], name="idx_group_id", sparse=True),
             # Parent memory index
             IndexModel([("parent_id", ASCENDING)], name="idx_parent"),
-            # Composite index of user ID and parent memory
+            # Composite index of user ID and parent ID
             IndexModel(
                 [("user_id", ASCENDING), ("parent_id", ASCENDING)],
-                name="idx_user_parent",
+                name="idx_user_parent_id",
             ),
             # Composite index for time range queries (start_time, end_time)
             IndexModel(
