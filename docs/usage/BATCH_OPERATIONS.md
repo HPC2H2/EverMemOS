@@ -97,7 +97,7 @@ The `--scene` parameter specifies the memory extraction strategy:
     "group_id": "group_001",
     "name": "Project Discussion Group",
     "description": "Team project planning and updates",
-    "scene": "work",
+    "scene": "group_chat",
     "timezone": "Asia/Shanghai",
     "user_details": {
       "user_101": {
