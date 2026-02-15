@@ -27,6 +27,13 @@ from api_specs.dtos import (
     PatchConversationMetaResult,
     DeleteMemoriesResult,
     MemorizeResult,
+    # === BEGIN: 非官方扩展 ===
+    # 添加时间：2026-02-16
+    # 开发者：HPC2H2
+    # 用途：处理待清理的 pending 消息
+    # 状态：实验性功能，可能在未来版本移除
+    ClearPendingRequest,
+    ClearPendingResult,
     # API Response wrappers
     MemorizeResponse,
     FetchMemoriesResponse,
@@ -35,6 +42,8 @@ from api_specs.dtos import (
     SaveConversationMetaResponse,
     PatchConversationMetaResponse,
     DeleteMemoriesResponse,
+    ClearPendingResponse,
+    # === END: 非官方扩展 ===
 )
 
 # Backward compatibility aliases
@@ -64,6 +73,8 @@ __all__ = [
     "PatchConversationMetaResult",
     "DeleteMemoriesResult",
     "MemorizeResult",
+    "ClearPendingRequest",
+    "ClearPendingResult",
     # API Response wrappers
     "MemorizeResponse",
     "FetchMemoriesResponse",
@@ -72,6 +83,7 @@ __all__ = [
     "SaveConversationMetaResponse",
     "PatchConversationMetaResponse",
     "DeleteMemoriesResponse",
+    "ClearPendingResponse",
     # Backward compatibility aliases
     "FetchMemoriesParams",
     "SearchMemoriesRequest",

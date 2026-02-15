@@ -42,6 +42,14 @@ from infra_layer.adapters.input.api.dto.memory_dto import (
     ConversationMetaGetRequest,
     ConversationMetaPatchRequest,
     DeleteMemoriesRequestDTO,
+    # === BEGIN: 非官方扩展 ===
+    # 添加时间：2026-02-16
+    # 开发者：HPC2H2
+    # 用途：处理待清理的 pending 消息
+    # 状态：实验性功能，可能在未来版本移除
+    ClearPendingRequest,
+    ClearPendingResponse,
+    # === END: 非官方扩展 ===
     # Response DTOs
     MemorizeResponse,
     FetchMemoriesResponse,
@@ -953,6 +961,101 @@ class MemoryController(BaseController):
                 status_code=500,
                 detail="Failed to update conversation metadata, please try again later",
             ) from e
+
+    # === BEGIN: 非官方扩展 ===
+    # 添加时间：2026-02-16
+    # 开发者：HPC2H2
+    # 用途：处理待清理的 pending 消息
+    # 状态：实验性功能，可能在未来版本移除
+    @post(
+        "/pending/clear",
+        response_model=ClearPendingResponse,
+        summary="Clear pending messages for a group",
+        description="""
+        Mark pending or accumulating messages as used for a given group.
+
+        - Required: group_id
+        - Optional: user_id filter
+        - Optional: include message_ids or exclude_message_ids to scope the update
+        """,
+        responses={
+            400: {
+                "description": "Request parameter error",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "status": ErrorStatus.FAILED.value,
+                            "code": ErrorCode.INVALID_PARAMETER.value,
+                            "message": "group_id is required",
+                            "path": "/api/v1/memories/pending/clear",
+                        }
+                    }
+                },
+            },
+            404: {
+                "description": "No pending messages found",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "status": ErrorStatus.FAILED.value,
+                            "code": ErrorCode.RESOURCE_NOT_FOUND.value,
+                            "message": "No pending messages found matching the criteria",
+                            "path": "/api/v1/memories/pending/clear",
+                        }
+                    }
+                },
+            },
+        },
+    )
+    async def clear_pending(
+        self,
+        fastapi_request: FastAPIRequest,
+        request_body: ClearPendingRequest = None,  # OpenAPI documentation only
+    ) -> ClearPendingResponse:
+        """Clear pending or accumulating messages by marking them as used."""
+
+        del request_body
+        try:
+            request_data = await fastapi_request.json()
+            clear_request = ClearPendingRequest(**request_data)
+        except Exception as e:
+            logger.error("clear-pending request parse error: %s", e)
+            raise HTTPException(status_code=400, detail=str(e)) from e
+
+        log_service = get_bean_by_type(MemoryRequestLogService)
+
+        updated = await log_service.clear_pending_messages(
+            group_id=clear_request.group_id,
+            user_id=clear_request.user_id,
+            message_ids=clear_request.message_ids,
+            exclude_message_ids=clear_request.exclude_message_ids,
+        )
+
+        if updated == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="No pending messages found matching the criteria",
+            )
+
+        filters = ["group_id"]
+        if clear_request.user_id is not None:
+            filters.append("user_id")
+        if clear_request.message_ids:
+            filters.append("message_ids")
+        if clear_request.exclude_message_ids:
+            filters.append("exclude_message_ids")
+
+        return {
+            "status": ErrorStatus.OK.value,
+            "message": f"Cleared {updated} pending messages",
+            "result": {
+                "group_id": clear_request.group_id,
+                "user_id": clear_request.user_id,
+                "cleared_count": updated,
+                "filters": filters,
+            },
+        }
+    # === END: 非官方扩展 ===
 
     @delete(
         "",

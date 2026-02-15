@@ -405,3 +405,40 @@ class MemoryRequestLogService:
             group_id,
         )
         return result
+
+    # === BEGIN: 非官方扩展 ===
+    # 添加时间：2026-02-16
+    # 开发者：HPC2H2
+    # 用途：处理待清理的 pending 消息
+    # 状态：实验性功能，可能在未来版本移除
+    async def clear_pending_messages(
+        self,
+        group_id: str,
+        user_id: Optional[str] = MAGIC_ALL,
+        message_ids: Optional[List[str]] = None,
+        exclude_message_ids: Optional[List[str]] = None,
+    ) -> int:
+        """Mark pending messages as used (cleared) with optional filters."""
+
+        if not group_id:
+            logger.error("clear_pending_messages requires group_id")
+            return 0
+
+        repo = self._get_repository()
+        updated = await repo.mark_pending_as_used(
+            group_id=group_id,
+            user_id=user_id,
+            message_ids=message_ids,
+            exclude_message_ids=exclude_message_ids,
+        )
+
+        logger.info(
+            "Cleared pending messages: group_id=%s, user_id=%s, include=%d, exclude=%d, updated=%d",
+            group_id,
+            user_id,
+            len(message_ids) if message_ids else 0,
+            len(exclude_message_ids) if exclude_message_ids else 0,
+            updated,
+        )
+        return updated
+    # === END: 非官方扩展 ===

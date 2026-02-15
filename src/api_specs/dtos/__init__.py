@@ -27,6 +27,16 @@ from api_specs.dtos.memory import (
     PendingMessage,
     RetrieveMemResponse,
     SearchMemoriesResponse,
+    # === BEGIN: 非官方扩展 ===
+    # 添加时间：2026-02-16
+    # 开发者：HPC2H2
+    # 用途：处理待清理的 pending 消息
+    # 状态：实验性功能，可能在未来版本移除
+    # Clear pending
+    ClearPendingRequest,
+    ClearPendingResult,
+    ClearPendingResponse,
+    # === END: 非官方扩展 ===
     # Delete
     DeleteMemoriesRequest,
     DeleteMemoriesResult,
@@ -72,6 +82,10 @@ __all__ = [
     "PendingMessage",
     "RetrieveMemResponse",
     "SearchMemoriesResponse",
+    # Memory - Clear pending
+    "ClearPendingRequest",
+    "ClearPendingResult",
+    "ClearPendingResponse",
     # Memory - Delete
     "DeleteMemoriesRequest",
     "DeleteMemoriesResult",

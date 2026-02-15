@@ -436,6 +436,74 @@ class MemoryRequestLogRepository(BaseRepository[MemoryRequestLog]):
             logger.error("Failed to mark as used: group_id=%s, error=%s", group_id, e)
             return 0
 
+    # === BEGIN: 非官方扩展 ===
+    # 添加时间：2026-02-16
+    # 开发者：HPC2H2
+    # 用途：处理待清理的 pending 消息
+    # 状态：实验性功能，可能在未来版本移除
+    async def mark_pending_as_used(
+        self,
+        group_id: str,
+        user_id: Optional[str] = MAGIC_ALL,
+        message_ids: Optional[List[str]] = None,
+        exclude_message_ids: Optional[List[str]] = None,
+        session: Optional[AsyncClientSession] = None,
+    ) -> int:
+        """
+        Mark pending/accumulating records as used with flexible filters.
+
+        Batch update sync_status: -1 or 0 -> 1.
+
+        Args:
+            group_id: Conversation group ID (required)
+            user_id: Optional user filter (MAGIC_ALL to skip)
+            message_ids: Optional list of message_ids to include
+            exclude_message_ids: Optional list of message_ids to exclude
+            session: Optional MongoDB session
+
+        Returns:
+            Number of updated records
+        """
+        try:
+            collection = MemoryRequestLog.get_pymongo_collection()
+            query = {"group_id": group_id, "sync_status": {"$in": [-1, 0]}}
+
+            # User filter with MAGIC_ALL logic
+            if user_id != MAGIC_ALL:
+                if user_id == "" or user_id is None:
+                    query["user_id"] = {"$in": [None, ""]}
+                else:
+                    query["user_id"] = user_id
+
+            # Include / exclude message filters
+            if message_ids:
+                query["message_id"] = {"$in": message_ids}
+            elif exclude_message_ids:
+                query["message_id"] = {"$nin": exclude_message_ids}
+
+            result = await collection.update_many(
+                query, {"$set": {"sync_status": 1}}, session=session
+            )
+            modified_count = result.modified_count if result else 0
+            logger.info(
+                "Marked pending as used: group_id=%s, user_id=%s, include=%d, exclude=%d, modified=%d",
+                group_id,
+                user_id,
+                len(message_ids) if message_ids else 0,
+                len(exclude_message_ids) if exclude_message_ids else 0,
+                modified_count,
+            )
+            return modified_count
+        except Exception as e:
+            logger.error(
+                "Failed to mark pending as used: group_id=%s, user_id=%s, error=%s",
+                group_id,
+                user_id,
+                e,
+            )
+            return 0
+    # === END: 非官方扩展 ===
+
     # ==================== Flexible Query Methods ====================
 
     async def find_pending_by_filters(

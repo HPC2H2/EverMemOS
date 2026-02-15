@@ -772,6 +772,55 @@ class SearchMemoriesResponse(BaseApiResponse[RetrieveMemResponse]):
     }
 
 
+# === BEGIN: 非官方扩展 ===
+# 添加时间：2026-02-16
+# 开发者：HPC2H2
+# 用途：处理待清理的 pending 消息
+# 状态：实验性功能，可能在未来版本移除
+# =============================================================================
+# Clear Pending DTOs (POST /api/v1/memories/pending/clear)
+# =============================================================================
+
+
+class ClearPendingRequest(BaseModel):
+    """Clear pending messages for a group (and optional user/message filters)."""
+
+    group_id: str = Field(..., description="Group ID to clear pending messages")
+    user_id: Optional[str] = Field(
+        default=None,
+        description="Optional user filter; if provided, only clear this user's pending messages",
+    )
+    message_ids: Optional[List[str]] = Field(
+        default=None,
+        description="Optional specific message_ids to clear; if omitted, clears all pending in the group/user scope",
+    )
+    exclude_message_ids: Optional[List[str]] = Field(
+        default=None,
+        description="Optional message_ids to keep pending while clearing others",
+    )
+
+
+class ClearPendingResult(BaseModel):
+    """Result of clearing pending messages."""
+
+    group_id: str = Field(description="Group ID processed")
+    user_id: Optional[str] = Field(default=None, description="User filter applied")
+    cleared_count: int = Field(
+        default=0, description="Number of pending messages marked as used"
+    )
+    filters: List[str] = Field(
+        default_factory=list,
+        description="Applied filters, e.g., ['group_id', 'user_id']",
+    )
+
+
+class ClearPendingResponse(BaseApiResponse[ClearPendingResult]):
+    """API response for clearing pending messages."""
+
+    result: ClearPendingResult = Field(description="Clear pending operation result")
+# === END: 非官方扩展 ===
+
+
 # =============================================================================
 # Delete DTOs (DELETE /api/v1/memories)
 # =============================================================================
