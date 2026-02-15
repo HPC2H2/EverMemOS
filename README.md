@@ -1,3 +1,4 @@
+New Feature Added: Clear-pending API 
 <div align="center" id="readme-top">
 
 ![banner-gif][banner-gif]
