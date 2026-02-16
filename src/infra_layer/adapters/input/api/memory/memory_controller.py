@@ -967,6 +967,48 @@ class MemoryController(BaseController):
     # 开发者：HPC2H2
     # 用途：处理待清理的 pending 消息
     # 状态：实验性功能，可能在未来版本移除
+    async def _handle_clear_pending(self, fastapi_request: FastAPIRequest) -> ClearPendingResponse:
+        try:
+            request_data = await fastapi_request.json()
+            clear_request = ClearPendingRequest(**request_data)
+        except Exception as e:
+            logger.error("clear-pending request parse error: %s", e)
+            raise HTTPException(status_code=400, detail=str(e)) from e
+
+        log_service = get_bean_by_type(MemoryRequestLogService)
+
+        updated = await log_service.clear_pending_messages(
+            group_id=clear_request.group_id,
+            user_id=clear_request.user_id,
+            message_ids=clear_request.message_ids,
+            exclude_message_ids=clear_request.exclude_message_ids,
+        )
+
+        if updated == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="No pending messages found matching the criteria",
+            )
+
+        filters = ["group_id"]
+        if clear_request.user_id is not None:
+            filters.append("user_id")
+        if clear_request.message_ids:
+            filters.append("message_ids")
+        if clear_request.exclude_message_ids:
+            filters.append("exclude_message_ids")
+
+        return {
+            "status": ErrorStatus.OK.value,
+            "message": f"Cleared {updated} pending messages",
+            "result": {
+                "group_id": clear_request.group_id,
+                "user_id": clear_request.user_id,
+                "cleared_count": updated,
+                "filters": filters,
+            },
+        }
+
     @post(
         "/pending/clear",
         response_model=ClearPendingResponse,
@@ -1015,46 +1057,51 @@ class MemoryController(BaseController):
         """Clear pending or accumulating messages by marking them as used."""
 
         del request_body
-        try:
-            request_data = await fastapi_request.json()
-            clear_request = ClearPendingRequest(**request_data)
-        except Exception as e:
-            logger.error("clear-pending request parse error: %s", e)
-            raise HTTPException(status_code=400, detail=str(e)) from e
+        return await self._handle_clear_pending(fastapi_request)
 
-        log_service = get_bean_by_type(MemoryRequestLogService)
-
-        updated = await log_service.clear_pending_messages(
-            group_id=clear_request.group_id,
-            user_id=clear_request.user_id,
-            message_ids=clear_request.message_ids,
-            exclude_message_ids=clear_request.exclude_message_ids,
-        )
-
-        if updated == 0:
-            raise HTTPException(
-                status_code=404,
-                detail="No pending messages found matching the criteria",
-            )
-
-        filters = ["group_id"]
-        if clear_request.user_id is not None:
-            filters.append("user_id")
-        if clear_request.message_ids:
-            filters.append("message_ids")
-        if clear_request.exclude_message_ids:
-            filters.append("exclude_message_ids")
-
-        return {
-            "status": ErrorStatus.OK.value,
-            "message": f"Cleared {updated} pending messages",
-            "result": {
-                "group_id": clear_request.group_id,
-                "user_id": clear_request.user_id,
-                "cleared_count": updated,
-                "filters": filters,
+    @post(
+        "/clear-pending",
+        response_model=ClearPendingResponse,
+        summary="Clear pending messages (alias for VSCode plugin)",
+        description="Alias path for compatibility with EverMemo VSCode plugin",
+        responses={
+            400: {
+                "description": "Request parameter error",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "status": ErrorStatus.FAILED.value,
+                            "code": ErrorCode.INVALID_PARAMETER.value,
+                            "message": "group_id is required",
+                            "path": "/api/v1/memories/clear-pending",
+                        }
+                    }
+                },
             },
-        }
+            404: {
+                "description": "No pending messages found",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "status": ErrorStatus.FAILED.value,
+                            "code": ErrorCode.RESOURCE_NOT_FOUND.value,
+                            "message": "No pending messages found matching the criteria",
+                            "path": "/api/v1/memories/clear-pending",
+                        }
+                    }
+                },
+            },
+        },
+    )
+    async def clear_pending_alias(
+        self,
+        fastapi_request: FastAPIRequest,
+        request_body: ClearPendingRequest = None,  # OpenAPI documentation only
+    ) -> ClearPendingResponse:
+        """Alias endpoint for VSCode plugin compatibility."""
+
+        del request_body
+        return await self._handle_clear_pending(fastapi_request)
     # === END: 非官方扩展 ===
 
     @delete(
